@@ -1,4 +1,4 @@
-import { Schema, model, models, type Model } from 'mongoose';
+import mongoose, { Schema, model, type Model } from 'mongoose';
 
 /** Platform-level audit (master DB): who created / changed / suspended organisations, modules, plans, invoices, staff. Append-only. */
 export interface PlatformAuditDoc {
@@ -27,4 +27,4 @@ const platformAuditSchema = new Schema<PlatformAuditDoc>(
 platformAuditSchema.index({ at: -1 });
 
 export const PlatformAudit: Model<PlatformAuditDoc> =
-  (models.PlatformAudit as Model<PlatformAuditDoc>) || model<PlatformAuditDoc>('PlatformAudit', platformAuditSchema);
+  (mongoose.models.PlatformAudit as Model<PlatformAuditDoc>) || model<PlatformAuditDoc>('PlatformAudit', platformAuditSchema);

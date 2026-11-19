@@ -1,4 +1,4 @@
-import { Schema, model, models, type Model } from 'mongoose';
+import mongoose, { Schema, model, type Model } from 'mongoose';
 
 export const COST_CATEGORIES = ['hosting', 'whatsapp', 'sms', 'email', 'storage', 'ai', 'ads', 'support', 'other'] as const;
 
@@ -28,4 +28,4 @@ const costSchema = new Schema<CostDoc>(
   { timestamps: true },
 );
 
-export const CostEntry: Model<CostDoc> = (models.CostEntry as Model<CostDoc>) || model<CostDoc>('CostEntry', costSchema);
+export const CostEntry: Model<CostDoc> = (mongoose.models.CostEntry as Model<CostDoc>) || model<CostDoc>('CostEntry', costSchema);

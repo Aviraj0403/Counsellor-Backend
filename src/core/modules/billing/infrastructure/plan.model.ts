@@ -1,4 +1,4 @@
-import { Schema, model, models, type Model } from 'mongoose';
+import mongoose, { Schema, model, type Model } from 'mongoose';
 
 export interface PlanDoc {
   _id: any;
@@ -27,4 +27,4 @@ const planSchema = new Schema<PlanDoc>(
   { timestamps: true },
 );
 
-export const Plan: Model<PlanDoc> = (models.Plan as Model<PlanDoc>) || model<PlanDoc>('Plan', planSchema);
+export const Plan: Model<PlanDoc> = (mongoose.models.Plan as Model<PlanDoc>) || model<PlanDoc>('Plan', planSchema);

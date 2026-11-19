@@ -1,4 +1,4 @@
-import { Schema, model, models, type Model } from 'mongoose';
+import mongoose, { Schema, model, type Model } from 'mongoose';
 
 export interface RefreshTokenDoc {
   _id: any;
@@ -28,4 +28,4 @@ const schema = new Schema<RefreshTokenDoc>(
 );
 schema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 }); // Mongo removes expired rows by itself
 
-export const RefreshToken: Model<RefreshTokenDoc> = (models.RefreshToken as Model<RefreshTokenDoc>) || model<RefreshTokenDoc>('RefreshToken', schema);
+export const RefreshToken: Model<RefreshTokenDoc> = (mongoose.models.RefreshToken as Model<RefreshTokenDoc>) || model<RefreshTokenDoc>('RefreshToken', schema);

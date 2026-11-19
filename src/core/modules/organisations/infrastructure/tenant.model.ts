@@ -1,4 +1,4 @@
-import { Schema, model, models, type Model } from 'mongoose';
+import mongoose, { Schema, model, type Model } from 'mongoose';
 
 /** An organisation (counsellor business). Master DB. Student/lead data does NOT live here, it lives in the organisation's own database. */
 export interface TenantDoc {
@@ -27,4 +27,4 @@ const tenantSchema = new Schema<TenantDoc>(
   { timestamps: true, minimize: false },
 );
 
-export const Tenant: Model<TenantDoc> = (models.Tenant as Model<TenantDoc>) || model<TenantDoc>('Tenant', tenantSchema);
+export const Tenant: Model<TenantDoc> = (mongoose.models.Tenant as Model<TenantDoc>) || model<TenantDoc>('Tenant', tenantSchema);

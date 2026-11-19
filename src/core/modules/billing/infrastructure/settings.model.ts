@@ -1,4 +1,4 @@
-import { Schema, model, models, type Model } from 'mongoose';
+import mongoose, { Schema, model, type Model } from 'mongoose';
 
 /** Our own company details printed on invoices. A single document (_id "platform"). Master DB. */
 export interface PlatformSettingsDoc {
@@ -34,7 +34,7 @@ const settingsSchema = new Schema<PlatformSettingsDoc>(
 );
 
 export const PlatformSettings: Model<PlatformSettingsDoc> =
-  (models.PlatformSettings as Model<PlatformSettingsDoc>) || model<PlatformSettingsDoc>('PlatformSettings', settingsSchema);
+  (mongoose.models.PlatformSettings as Model<PlatformSettingsDoc>) || model<PlatformSettingsDoc>('PlatformSettings', settingsSchema);
 
 /** An organisation's billing identity (who the invoice is addressed to). Kept in billing, one per organisation. Master DB. */
 export interface BillingDetailsDoc {
@@ -57,4 +57,4 @@ const detailsSchema = new Schema<BillingDetailsDoc>(
 );
 
 export const BillingDetails: Model<BillingDetailsDoc> =
-  (models.BillingDetails as Model<BillingDetailsDoc>) || model<BillingDetailsDoc>('BillingDetails', detailsSchema);
+  (mongoose.models.BillingDetails as Model<BillingDetailsDoc>) || model<BillingDetailsDoc>('BillingDetails', detailsSchema);

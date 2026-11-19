@@ -1,4 +1,4 @@
-import { Schema, model, models, type Model } from 'mongoose';
+import mongoose, { Schema, model, type Model } from 'mongoose';
 
 export interface InvoiceLine {
   code: string;
@@ -78,9 +78,9 @@ const invoiceSchema = new Schema<InvoiceDoc>(
 invoiceSchema.index({ tenantId: 1, period: 1 }, { unique: true }); // one invoice per organisation per month
 invoiceSchema.index({ 'paymentLink.id': 1 }, { sparse: true }); // webhook lookup
 
-export const Invoice: Model<InvoiceDoc> = (models.Invoice as Model<InvoiceDoc>) || model<InvoiceDoc>('Invoice', invoiceSchema);
+export const Invoice: Model<InvoiceDoc> = (mongoose.models.Invoice as Model<InvoiceDoc>) || model<InvoiceDoc>('Invoice', invoiceSchema);
 
 /** Yearly running number for invoice numbers (CP-2026-0001). */
 const counterSchema = new Schema<{ _id: string; seq: number }>({ _id: String, seq: { type: Number, default: 0 } });
 export const Counter: Model<{ _id: string; seq: number }> =
-  (models.Counter as Model<{ _id: string; seq: number }>) || model<{ _id: string; seq: number }>('Counter', counterSchema);
+  (mongoose.models.Counter as Model<{ _id: string; seq: number }>) || model<{ _id: string; seq: number }>('Counter', counterSchema);

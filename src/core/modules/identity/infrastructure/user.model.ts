@@ -1,4 +1,4 @@
-import { Schema, model, models, type Model } from 'mongoose';
+import mongoose, { Schema, model, type Model } from 'mongoose';
 
 export interface UserDoc {
   _id: any;
@@ -46,4 +46,4 @@ const userSchema = new Schema<UserDoc>(
   { timestamps: true },
 );
 
-export const User: Model<UserDoc> = (models.User as Model<UserDoc>) || model<UserDoc>('User', userSchema);
+export const User: Model<UserDoc> = (mongoose.models.User as Model<UserDoc>) || model<UserDoc>('User', userSchema);
