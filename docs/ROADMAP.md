@@ -1,29 +1,14 @@
 # Roadmap
 
-Everything below ships **dark** behind a module flag and is switched on per organisation. Estimates are rough and assume a small team.
-
-## Done in this foundation
-- Project skeleton, validated config, structured logging, request ids, standard errors
-- Platform contract + local core: login, organisations, module switches, roles/permissions, team
-- Leads: capture, phone normalisation, duplicate protection, stage rules, auto-assign, counsellor data scope, consent field
-- Ledger: double-entry, integer paise, immutable, reversal, idempotency, balance, trial balance, entries list
-- Plans, negotiated pricing, staff limit, monthly invoices (GST), platform costs, financial dashboard, cross-organisation research (counts only)
-- Audit trail, tests, CI, Docker
+## Built (all modules are live in the catalogue)
+- Platform: organisations, plans, per-module switches, roles/permissions, staff seats, billing (plans, negotiated prices, GST invoices with CGST/SGST/IGST, PDF, Razorpay link), platform costs (manual + automatic WhatsApp metering), financial dashboard, cross-organisation research (counts only), platform audit.
+- Login security: refresh-token rotation with reuse detection, TOTP MFA, rate limits, immediate revoke.
+- Counselling product: leads (+ Excel/CSV import), follow-ups, students (DPDP export/erase), colleges, applications (status machine), document vault (encrypted, verified, signed downloads), ledger, commissions, reports, WhatsApp, Meta Ads, SEO pages, public API + webhooks, student and college portals.
+- Engineering: module architecture with enforced rules, 185 unit + 267 end-to-end tests, ops scripts (index sync, tenant export, backup wrapper).
 
 ## Next (in order)
-| # | Phase | Includes | Rough |
-|---|---|---|---|
-| 1 | CRM hardening | Excel import, follow-up tasks + reminders, call/WhatsApp log, saved views, Meta Lead Ads webhook | 3-4 wks |
-| 2 | Admission engine | Student profile, college directory, applications, document checklist + verify flow | 6-8 wks |
-| 3 | Finance | Commission rules per college, counsellor payouts, GST invoice, Razorpay collection | 4-6 wks |
-| 4 | Connect | API keys, versioned public API, webhooks, college portal, bulk status upload | 6-8 wks |
-| 5 | Growth | Meta CAPI on lead stage events, SEO college pages, UTM cost tracking, WhatsApp automation | 4-6 wks |
-| 6 | Superadmin intelligence (started) | Done: costs, revenue, margin, source conversion. Next: automatic cost metering (WhatsApp/SMS/AI), college conversion research once colleges exist, payment-gateway collection of invoices (code + fake-client tests done; needs real Razorpay keys to verify), PDF invoices (done) | ongoing |
-| 7 | Enterprise | Refresh tokens + MFA, SSO, Redis cache, queue + worker, remote Platform Core, per-tenant export/delete | as needed |
-
-## Before the first paying customer
-- [ ] Legal review of DPDP obligations (minors, consent, retention, breach notification)
-- [ ] Encrypted document storage + signed short-lived URLs (do not reuse public image hosting)
-- [ ] Automated backups + a tested restore (wrapper `scripts/backup.mjs` + docs/BACKUP_AND_RECOVERY.md written, UNVERIFIED: mongodump not installed here; schedule + restore drill still to do)
-- [x] Production index migration step (`npm run db:indexes`)
-- [ ] Decide ownership/commission rule when two organisations get the same student
+1. **Go live safely:** work through docs/GO_LIVE_CHECKLIST.md (real Atlas, credentials, restore drill, legal review, browser click-through).
+2. Scheduler/worker (webhook retries, delayed WhatsApp, reminders), Redis for rate limits and caches, S3/Blob file store, virus scanning.
+3. Reports completion (date ranges everywhere, per-counsellor metrics) and the SEO course table.
+4. Enterprise: mandatory MFA policy, session list/revoke UI, SSO, remote Platform Core service, key rotation, audit export.
+5. Growth: college self-serve onboarding, payment collection from students, more languages, mobile app.

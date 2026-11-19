@@ -56,6 +56,18 @@ docs/                   ADMIN_GUIDE, ARCHITECTURE, ROADMAP, RUNBOOK, SECURITY, a
 | product | `leads` | enquiries, stages, assignment, consent |
 | product | `ledger` | double-entry ledger (immutable, paise) |
 | product | `insights` | cross-organisation research (counts only) |
+| product | `followups` | tasks, reminders, activity timeline |
+| product | `students` | student profiles, DPDP export and erase |
+| product | `colleges` | college and course directory, shortlist |
+| product | `applications` | applications and the status pipeline |
+| product | `documents` | encrypted document vault, verification, signed downloads |
+| product | `commissions` | commission rules, accruals, payouts (posts to the ledger) |
+| product | `reports` | organisation reports (read-only, composes other modules) |
+| product | `whatsapp` | WhatsApp templates, sending, automation, cost metering |
+| product | `metaAds` | Meta lead ads in, conversion events out |
+| product | `seoPages` | public SEO college pages and lead form |
+| product | `publicApi` | API keys, public API, signed webhooks |
+| product | `portal` | student and college logins (their own slice only) |
 
 ### Inside a module
 
@@ -85,6 +97,12 @@ Dependency direction: `http → application → infrastructure` and `application
 3. `product/routes.ts`: one line mounting it behind `g.requireModule('students')`.
 4. If another module needs it, add the edge to `PINNED` in `tests/architecture.test.ts`.
 5. Tests: pure rules in `tests/`, the whole story in `tests/e2e/`.
+
+## How modules cooperate without importing each other
+
+- **Events** (`shared/kernel/events.ts`): fire-and-forget. `leads` announces `lead.stage_changed`; `whatsapp`, `metaAds`, `publicApi` and `followups` each listen.
+- **Hooks** (`shared/kernel/hooks.ts`): ask a question. `documents` registers a guard that blocks an application from being submitted while mandatory documents are unverified; every module can add a section to a student data export.
+- **Wiring** happens once, in `src/app/events.ts`. Each module declares its allowed dependencies in its own `module.json`.
 
 ## Request pipeline
 

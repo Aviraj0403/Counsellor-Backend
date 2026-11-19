@@ -27,28 +27,31 @@ Live list (always current): `GET /api/v1/catalog/roles`.
 
 ## Modules
 
-`Core` = always on. `Add-on` = off until we switch it on for that organisation (this is what we sell).
-`Built` = ready to use today. `Coming` = registered and priceable, feature not built yet, **do not sell yet**.
+`Core` = always on. `Default on` = on unless switched off. `Add-on` = off until we switch it on for that organisation (this is what we sell).
+Every module below is built. Features that call outside services (Meta, WhatsApp, Razorpay) work in tests with fakes and need real credentials before they can be used live (see docs/GO_LIVE_CHECKLIST.md).
 
-| Module | Type | Status | Needs first |
+| Module | Type | What it gives the organisation | Needs first |
 |---|---|---|---|
-| Leads & enquiries | Core | Built | , |
-| Team & roles | Core | Built | , |
-| Ledgers & commission | Add-on | Built | , |
-| Student profiles | Add-on | Coming | Leads |
-| College directory | Add-on | Coming | , |
-| Applications & status | Add-on | Coming | Student profiles + College directory |
-| Document vault | Add-on | Coming | Student profiles |
-| Reports & analytics | Add-on | Coming | Leads |
-| WhatsApp automation | Add-on | Coming | Leads |
-| Meta Ads connection | Add-on | Coming | Leads |
-| SEO college pages | Add-on | Coming | College directory |
-| API & webhooks | Add-on | Coming | , |
-| Student status portal | Add-on | Coming | Applications |
-| College portal | Add-on | Coming | Applications |
+| Leads & enquiries | Core | Capture, duplicate protection, stages, auto-assign, consent, Excel/CSV import | , |
+| Team & roles | Core | Staff with roles, plan seat limit | , |
+| Follow-ups & activity | Default on | Tasks, reminders, call/message notes, auto-task for new leads | Leads |
+| Student profiles | Add-on | Full profile, guardian consent for minors, data export, erase on request (DPDP) | Leads |
+| College directory | Add-on | Colleges, courses, fees, intakes, eligibility, shortlist tool, bulk import | , |
+| Applications & status | Add-on | Apply to a college, strict status pipeline, history | Students + Colleges |
+| Document vault | Add-on | Encrypted documents, checklist per college, verify/reject, signed short-lived downloads, every access audited | Students |
+| Ledgers | Add-on | Double-entry ledger, reversals, trial balance | , |
+| Commission rules & payouts | Add-on | College commission, counsellor share, automatic ledger posting, payouts | Ledger + Applications |
+| Reports & analytics | Add-on | Funnel, source performance, counsellor leaderboard, application and revenue reports | Leads |
+| WhatsApp automation | Add-on | Templates, send with consent check, automation rules, delivery status, per-message cost metering | Leads |
+| Meta Ads connection | Add-on | Meta lead-ads into leads, conversion events back to Meta (hashed data only) | Leads |
+| SEO college pages | Add-on | Public search-friendly college pages, sitemap, lead form | Colleges |
+| API & webhooks | Add-on | API keys (website forms, college-tied keys), signed outgoing webhooks with retry | , |
+| Student status portal | Add-on | A student logs in and sees only their own applications and uploads their documents | Applications |
+| College portal | Add-on | A college employee sees only their college's applications (no contact details) and updates status | Applications |
 
 If a module's "Needs first" module is off, the module stays off automatically, so nothing half-works.
 Live list: `GET /api/v1/catalog/modules`.
+
 
 ## How to: onboard a new counsellor organisation
 
