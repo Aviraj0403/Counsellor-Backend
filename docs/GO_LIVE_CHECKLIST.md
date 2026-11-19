@@ -7,7 +7,7 @@ outside service. Tick each line only after you have seen it work for real.
 - [ ] Real MongoDB (Atlas): set `MONGO_URI`; dedicated DB user; backups on; **run a restore drill** (docs/BACKUP_AND_RECOVERY.md was never executed: `mongodump` is not installed on the build machine).
 - [ ] `npm run db:indexes` once per environment (production does not auto-create indexes).
 - [ ] `JWT_SECRET` (32+), `ENCRYPTION_KEY` (64 hex; **losing it makes every stored document unreadable**: store it in a secret manager and back it up separately), `FILE_STORAGE_DIR` on encrypted disk with backups (or add an S3/Blob `FileStore`).
-- [ ] `PUBLIC_BASE_URL`, `CORS_ORIGINS` for every admin / portal origin.
+- [ ] `PLATFORM_ORIGINS=https://counsellor.jdinfotechsolutions.in`, `PUBLIC_BASE_URL=https://apicounsellor.jdinfotechsolutions.in`. Extra admin / portal / organisation domains: add from the superadmin console (Platform > Allowed domains), then point their DNS to the hosting.
 - [ ] Decide `ENCRYPTION_KEY` rotation procedure (not built).
 
 ## 2. Money

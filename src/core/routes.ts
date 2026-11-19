@@ -3,6 +3,7 @@ import type { Guards } from '../contracts/guards.js';
 import { platformAuditRoutes } from './modules/audit/index.js';
 import { billingRoutes } from './modules/billing/index.js';
 import { catalogRoutes } from './modules/catalog/index.js';
+import { domainsRoutes } from './modules/domains/index.js';
 import { authRoutes, countActiveStaffAccounts, teamRoutes } from './modules/identity/index.js';
 import { onboardingRoutes } from './modules/onboarding/index.js';
 import { organisationsRoutes } from './modules/organisations/index.js';
@@ -19,6 +20,7 @@ export const buildCoreRouter = (g: Guards): Router => {
   r.use(organisationsRoutes(g));
   r.use(billingRoutes(g, { countActiveStaffAccounts }));
   r.use(platformAuditRoutes(g));
+  r.use(domainsRoutes(g)); // which websites may call this API
   r.use(teamRoutes(g));
   return r;
 };

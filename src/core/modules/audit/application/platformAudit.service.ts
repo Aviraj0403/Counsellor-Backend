@@ -5,7 +5,7 @@ import { PlatformAudit } from '../infrastructure/platformAudit.model.js';
 /** Records a platform-level event. Never blocks the user's action; a failed write is logged for operators. */
 export const recordPlatformAudit = async (entry: {
   action: string;
-  targetType: 'tenant' | 'user' | 'module' | 'plan' | 'invoice' | 'cost';
+  targetType: 'tenant' | 'user' | 'module' | 'plan' | 'invoice' | 'cost' | 'settings' | 'domain';
   targetId?: string;
   tenantId?: string;
   meta?: Record<string, unknown>;

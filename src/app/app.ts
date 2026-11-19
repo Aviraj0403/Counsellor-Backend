@@ -4,6 +4,7 @@ import rateLimit from 'express-rate-limit';
 import helmet from 'helmet';
 import mongoose from 'mongoose';
 import { env } from '../config/env.js';
+import { isAllowedOrigin } from '../core/modules/domains/index.js';
 import { buildCoreRouter } from '../core/routes.js';
 import { razorpayWebhookRoutes } from '../core/modules/billing/index.js';
 import { insightsRoutes } from '../product/modules/insights/index.js';
@@ -26,9 +27,18 @@ export const buildApp = () => {
 
   app.use(requestContext);
   app.use(helmet());
-  const origins = env.CORS_ORIGINS.split(',').map((s) => s.trim()).filter(Boolean);
   // exposedHeaders: lets browser code (the admin app) read the request id from the response headers.
-  app.use(cors({ origin: origins.length ? origins : false, credentials: false, exposedHeaders: ['x-request-id'] }));
+  // Origin whitelist = server config (PLATFORM_ORIGINS, CORS_ORIGINS) + domains the superadmin added in the console + localhost outside production.
+  app.use(
+    cors({
+      origin: (origin, cb) => {
+        if (!origin) return cb(null, true); // not a browser (curl, server to server): CORS does not apply
+        isAllowedOrigin(origin).then((ok) => cb(null, ok), () => cb(null, false));
+      },
+      credentials: false,
+      exposedHeaders: ['x-request-id'],
+    }),
+  );
   // rawBody: webhooks (Meta, WhatsApp, Razorpay) are signed over the exact bytes, so keep them next to the parsed JSON.
   app.use(express.json({ limit: '100kb', verify: (req, _res, buf) => void ((req as any).rawBody = buf) }));
 

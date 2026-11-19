@@ -51,6 +51,7 @@ export const PERMISSIONS = [
   'platform:costs:manage', // record platform running costs
   'platform:insights:read', // aggregated usage and conversion research (never student-level data)
   'platform:settings:manage', // our company details used on invoices (legal name, GSTIN, address)
+  'platform:domains:manage', // which websites may call this API (CORS whitelist)
 ] as const;
 export type Permission = (typeof PERMISSIONS)[number];
 

@@ -7,6 +7,9 @@ const schema = z.object({
   MONGO_URI: z.string().min(1, 'MONGO_URI is required'),
   JWT_SECRET: z.string().min(32, 'JWT_SECRET must be at least 32 characters'),
   JWT_TTL: z.string().default('1h'),
+  /** Our own web apps (admin console, portals). Comma list of full https origins. Always allowed; more can be added from the superadmin console. */
+  PLATFORM_ORIGINS: z.string().default('https://counsellor.jdinfotechsolutions.in'),
+  /** Extra origins from config (for example local development): http://localhost:5173 */
   CORS_ORIGINS: z.string().default(''),
   LOG_LEVEL: z.string().default('info'),
   PLATFORM_MODE: z.enum(['local', 'remote']).default('local'),

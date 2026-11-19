@@ -1,0 +1,1 @@
+{ "description": "Allowed browser origins (CORS whitelist): server config plus superadmin-managed domains.", "dependsOn": ["audit", "organisations"] }

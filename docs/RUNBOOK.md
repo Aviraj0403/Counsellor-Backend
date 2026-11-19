@@ -16,7 +16,8 @@ npm run dev              # http://localhost:4100/health
 |---|---|
 | `MONGO_URI` | One cluster. DBs: `cp_master`, `cp_t_<tenantId>`. Same cluster as ecommerce is fine for dev only; see docs/ARCHITECTURE.md |
 | `JWT_SECRET` | 32+ chars. App refuses to boot otherwise and lists what is wrong (never the values) |
-| `CORS_ORIGINS` | Comma-separated admin/portal origins. Empty = browsers are blocked |
+| `PLATFORM_ORIGINS` | Our own web apps (default `https://counsellor.jdinfotechsolutions.in`). Always allowed. |
+| `CORS_ORIGINS` | Extra origins from config (for example `http://localhost:5173`). More domains are added at runtime by the superadmin: Platform > Allowed domains (no restart). Empty everywhere = browsers are blocked. |
 | `LOGIN_RATE_LIMIT_MAX` | default 10 per IP per 15 min |
 | `LOG_LEVEL` | `debug` to see more; `silent` in tests |
 
@@ -31,7 +32,7 @@ Open the browser DevTools -> Network, click the failing request:
 
 | You see | It is | Look at |
 |---|---|---|
-| No request at all / red CORS error | Admin or `CORS_ORIGINS` | Is the admin origin in `CORS_ORIGINS`? Is `VITE_API_BASE_URL` right? |
+| No request at all / red CORS error | Admin or `CORS_ORIGINS` | Is the admin origin in `PLATFORM_ORIGINS` / `CORS_ORIGINS` or in Platform > Allowed domains? Is `VITE_API_BASE_URL` right? |
 | `(failed)` / timeout | API down or wrong URL | `GET /health` on the API host |
 | 401 | Token missing/expired/revoked | Log in again. Revoked by: password change, logout-all, block |
 | 403 `FORBIDDEN` | Role lacks the permission | `GET /api/v1/me` -> `permissions` |
@@ -71,7 +72,7 @@ curl -s localhost:4100/api/v1/me -H "authorization: Bearer <token>"
 |---|---|
 | App exits at boot with "Invalid environment configuration" | Read the listed variables; fix `.env` |
 | `/ready` is 503 | MongoDB unreachable: check `MONGO_URI`, Atlas IP allow-list, network |
-| Admin shows "Network Error" but API is up | CORS: add the exact admin origin (scheme + host + port) to `CORS_ORIGINS`, restart API |
+| Admin shows "Network Error" but API is up | CORS: superadmin adds the exact origin in Platform > Allowed domains (works within ~60 s, no restart), or put it in `PLATFORM_ORIGINS` and restart |
 | Login works but everything is 401 | Clock/secret: `JWT_SECRET` differs between instances, or token was revoked |
 | A module screen is missing for a customer | Module not enabled for that organisation (or its required module is off) |
 | `tsc` hangs / out of memory | Do not use generic `conn.model<T>()` from mongoose; use `tenantModel()` |

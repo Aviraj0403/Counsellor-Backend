@@ -159,3 +159,13 @@ College status, admission documents, student and college portals, WhatsApp autom
 - Access tokens last 15 minutes and are renewed silently with a refresh token (14 days, per browser tab). If a refresh token is ever used twice, that login is ended everywhere as a theft precaution. Changing or resetting a password, blocking a user, "Log out of all devices" and Logout end the refresh tokens.
 - **Two-step verification (TOTP)**: Account page > Two-step verification > Set up. Add the secret key to an authenticator app, enter the code to turn it on, and save the 10 recovery codes (shown once; each works one time). From then on sign-in asks for a code (or a recovery code) after the password. Five wrong codes lock the account for 15 minutes. To turn it off you need your password and a current code. A lost device with no recovery codes needs a database-level reset by us (not self-service yet).
 - Endpoints: POST /auth/refresh, /auth/logout, /auth/mfa/setup, /auth/mfa/enable, /auth/mfa/disable, /auth/mfa/verify; GET /me includes mfa.enabled.
+
+## Allowed domains (Super Admin only)
+
+A browser may call this API only from a website that is on the whitelist. Two sources, same rule everywhere:
+
+1. **Server configuration** (`PLATFORM_ORIGINS`, `CORS_ORIGINS` in the API `.env`): our own apps, for example `https://counsellor.jdinfotechsolutions.in`. Always allowed, shown read-only in the console, change needs a restart.
+2. **Platform > Allowed domains** in the console: add an organisation's own admin / portal / website address, or block / remove one. `GET/POST /platform/domains`, `PATCH/DELETE /platform/domains/:id` (permission `platform:domains:manage`, Super Admin only).
+   - Takes effect within seconds (a block is immediate), no restart. Every change is in the platform audit.
+   - Only exact `https://` domains are accepted: no wildcards, no IP addresses, no page paths, no usernames in the address. `http://localhost` works only outside production.
+   - Adding a domain only lets the browser talk to the API. The domain must already point to your hosting (DNS), and the admin app deployed there needs `VITE_API_BASE_URL` set to the API address.
