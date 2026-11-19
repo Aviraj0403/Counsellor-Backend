@@ -107,9 +107,9 @@ describe('identity, modules and config of an organisation', () => {
     expect(mod(body, 'team').config.health).toBe('ok');
   });
 
-  it('metaAds is a clearly marked placeholder (not wired yet)', async () => {
+  it('metaAds reports its real setup state (not connected yet)', async () => {
     const { body } = await ws(S.super, S.a);
-    expect(mod(body, 'metaAds')).toMatchObject({ enabled: true, config: { configured: null } });
+    expect(mod(body, 'metaAds')).toMatchObject({ enabled: true, config: { configured: false, health: 'attention' } });
   });
 
   it('health roll-up matches the modules', async () => {

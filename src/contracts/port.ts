@@ -57,6 +57,7 @@ export const PERMISSIONS = [
   'platform:insights:read', // aggregated usage and conversion research (never student-level data)
   'platform:settings:manage', // our company details used on invoices (legal name, GSTIN, address)
   'platform:domains:manage', // which websites may call this API (CORS whitelist)
+  'platform:tenants:impersonate', // act inside an organisation (superadmin only; audited, see docs/adr/0004)
 ] as const;
 export type Permission = (typeof PERMISSIONS)[number];
 
@@ -101,6 +102,13 @@ export interface Principal {
   permissions: Permission[];
   /** portal users only: the student id (role "student") or college id (role "college_user") they are tied to */
   linkedId?: string | null;
+  /**
+   * Set ONLY while platform staff act inside an organisation (header x-acting-tenant). Then scope is 'tenant', tenantId is that
+   * organisation, userId is the staff member's own id, and `permissions` is the acting set. See docs/adr/0004-acting-as-organisation.md.
+   */
+  actingAs?: { tenantId: string; tenantName: string; byUserId: string };
+  /** The staff member's ORIGINAL platform permissions while acting; `platform:*` checks use these, everything else uses `permissions`. */
+  platformPermissions?: Permission[];
 }
 
 export interface TeamMember {
@@ -125,6 +133,8 @@ export interface PlatformPort {
   findTenantBySlug(slug: string): Promise<TenantSummary | null>;
   /** Verifies a login token and returns the live user (blocked/removed users fail here). Throws AppError 401/403. */
   verifyAccessToken(token: string): Promise<Principal>;
+  /** Platform staff asks to act inside an organisation: returns the acting principal. Throws 403 (not allowed) / 404 (unknown organisation). */
+  resolveActing(principal: Principal, tenantId: string): Promise<Principal>;
   /** Which modules this counsellor organisation may use right now. */
   enabledModules(tenantId: string): Promise<Record<string, boolean>>;
   /** Active staff of one organisation, optionally filtered by role. */

@@ -169,3 +169,12 @@ A browser may call this API only from a website that is on the whitelist. Two so
    - Takes effect within seconds (a block is immediate), no restart. Every change is in the platform audit.
    - Only exact `https://` domains are accepted: no wildcards, no IP addresses, no page paths, no usernames in the address. `http://localhost` works only outside production.
    - Adding a domain only lets the browser talk to the API. The domain must already point to your hosting (DNS), and the admin app deployed there needs `VITE_API_BASE_URL` set to the API address.
+
+## Acting inside an organisation (Super Admin only)
+
+For support: a Super Admin can switch into an organisation and see exactly what its admin sees (menu, pages, data).
+- The admin sends the header `x-acting-tenant: <organisation id>` on every call and first calls `POST /api/v1/platform/tenants/:id/acting/start` `{ reason? }` (audited as `tenant.acting_started`). Other platform roles get 403. Suspended organisations can be entered.
+- While acting you have the Owner's access **except**: team management, erasing students, exporting student data, downloading documents, posting ledger entries and managing commissions. Those stay with the organisation.
+- Every write and every blocked attempt appears in **that organisation's** audit (`GET /api/v1/audit`) as `acting.write` / `acting.blocked` with `actingAs: true` and your user id. `/platform/*` calls keep your normal platform permissions. Sign-in, password and MFA calls always act on you, not the organisation.
+- `GET /api/v1/me` with the header returns the organisation's menu data plus `actingAs` and `platformUser`.
+- Logo: `PATCH /api/v1/platform/tenants/:id` `{ logoUrl, brandColor }` (platform) or `PATCH /api/v1/organisation/profile` (the Owner). `logoUrl` is an https link (max 500 characters); `null` clears it. It is returned in the tenant list, the workspace and `/me`.

@@ -7,6 +7,8 @@ export interface RequestContext {
   requestId: string;
   userId?: string;
   tenantId?: string;
+  /** platform staff acting inside an organisation: audit rows written in this request are stamped actingAs */
+  actingAs?: boolean;
 }
 
 const storage = new AsyncLocalStorage<RequestContext>();

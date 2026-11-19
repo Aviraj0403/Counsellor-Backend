@@ -8,7 +8,25 @@ export interface RoleDef {
   permissions: Permission[] | '*';
   /** portal roles: invited, never take a staff seat, only see their own slice of data */
   portal?: boolean;
+  /** not a real account role: derived at request time (platform_support), never stored on a user, never assignable */
+  pseudo?: boolean;
 }
+
+/** Actions that stay with the organisation even when our staff act inside it: irreversible, PII-export, or money-moving. */
+export const ACTING_EXCLUDED_PERMISSIONS: readonly Permission[] = ['team:manage', 'students:erase', 'documents:download', 'students:export', 'ledger:post', 'commissions:manage'];
+
+/** Pure derivation: the owner's permissions minus the excluded ones. Never contains platform:* or portal:* permissions. */
+export const deriveActingPermissions = (ownerPermissions: readonly Permission[]): Permission[] =>
+  ownerPermissions.filter((p) => !ACTING_EXCLUDED_PERMISSIONS.includes(p) && !p.startsWith('platform:') && !p.startsWith('portal:'));
+
+const OWNER_PERMISSIONS: Permission[] = [
+  'leads:read', 'leads:write', 'leads:assign', 'leads:import', 'followups:read', 'followups:write',
+  'students:read', 'students:write', 'students:export', 'students:erase', 'colleges:read', 'colleges:write',
+  'applications:read', 'applications:write', 'applications:status',
+  'documents:read', 'documents:write', 'documents:verify', 'documents:download',
+  'commissions:read', 'commissions:manage', 'ledger:read', 'ledger:post', 'reports:read',
+  'integrations:manage', 'seo:manage', 'whatsapp:send', 'appointments:read', 'appointments:write', 'appointments:manage', 'bots:read', 'bots:manage', 'audit:read', 'team:read', 'team:manage',
+];
 
 /**
  * ROLE MATRIX. A role is only a named bundle of permissions; nothing else in the code checks role names.
@@ -26,14 +44,7 @@ export const ROLES = {
     label: 'Owner',
     scope: 'tenant',
     description: 'Full control of the organisation: team, leads, students, applications, documents, ledgers, integrations and audit trail.',
-    permissions: [
-      'leads:read', 'leads:write', 'leads:assign', 'leads:import', 'followups:read', 'followups:write',
-      'students:read', 'students:write', 'students:export', 'students:erase', 'colleges:read', 'colleges:write',
-      'applications:read', 'applications:write', 'applications:status',
-      'documents:read', 'documents:write', 'documents:verify', 'documents:download',
-      'commissions:read', 'commissions:manage', 'ledger:read', 'ledger:post', 'reports:read',
-      'integrations:manage', 'seo:manage', 'whatsapp:send', 'appointments:read', 'appointments:write', 'appointments:manage', 'bots:read', 'bots:manage', 'audit:read', 'team:read', 'team:manage',
-    ],
+    permissions: OWNER_PERMISSIONS,
   },
   counsellor: {
     label: 'Counsellor',
@@ -51,6 +62,8 @@ export const ROLES = {
     description: 'Internal admissions desk: colleges, applications and their status, and verification of admission documents.',
     permissions: ['students:read', 'students:write', 'colleges:read', 'colleges:write', 'applications:read', 'applications:write', 'applications:status', 'documents:read', 'documents:write', 'documents:verify', 'documents:download', 'followups:read', 'followups:write', 'leads:read'],
   },
+  // ---- pseudo-role: platform staff acting inside an organisation (never stored, never assignable) ----
+  platform_support: { label: 'Platform support (acting)', scope: 'tenant', pseudo: true, description: "Our staff while acting inside an organisation: the owner's access minus irreversible, data-export and money-moving actions. Every write is audited.", permissions: deriveActingPermissions(OWNER_PERMISSIONS) },
   // ---- portal people (outside the organisation) ----
   student: { label: 'Student', scope: 'tenant', portal: true, description: 'Sees only their own application status and uploads their own documents.', permissions: ['portal:student'] },
   college_user: { label: 'College user', scope: 'tenant', portal: true, description: 'A college employee: sees and updates the status of applications sent to their college only.', permissions: ['portal:college'] },
@@ -58,7 +71,8 @@ export const ROLES = {
 
 export type RoleKey = keyof typeof ROLES;
 export const ROLE_KEYS = Object.keys(ROLES) as RoleKey[];
-export const TENANT_ROLE_KEYS = ROLE_KEYS.filter((k) => ROLES[k].scope === 'tenant');
+export const TENANT_ROLE_KEYS = ROLE_KEYS.filter((k) => ROLES[k].scope === 'tenant' && !('pseudo' in ROLES[k]));
+export const ACTING_ROLE = 'platform_support' as const;
 export const PLATFORM_ROLE_KEYS = ROLE_KEYS.filter((k) => ROLES[k].scope === 'platform');
 /** Roles an owner may hand out to STAFF. Not "owner" (created with the organisation) and not portal roles (invitation only). */
 export const STAFF_ROLE_KEYS = TENANT_ROLE_KEYS.filter((k) => k !== 'owner' && !('portal' in ROLES[k]));

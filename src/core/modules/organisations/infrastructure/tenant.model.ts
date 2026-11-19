@@ -12,6 +12,9 @@ export interface TenantDoc {
   planKey?: string | null;
   /** negotiated monthly price in RUPEES per module, overrides the catalogue price (0 = free for this customer) */
   priceOverrides?: Record<string, number>;
+  /** https URL of the organisation's logo and an optional brand colour (#rrggbb), shown in the admin */
+  logoUrl?: string | null;
+  brandColor?: string | null;
   createdAt: Date;
 }
 
@@ -23,6 +26,8 @@ const tenantSchema = new Schema<TenantDoc>(
     modules: { type: Schema.Types.Mixed, default: {} },
     planKey: { type: String, default: null },
     priceOverrides: { type: Schema.Types.Mixed, default: {} },
+    logoUrl: { type: String, maxlength: 500, default: null },
+    brandColor: { type: String, match: /^#[0-9a-fA-F]{6}$/, default: null },
   },
   { timestamps: true, minimize: false },
 );

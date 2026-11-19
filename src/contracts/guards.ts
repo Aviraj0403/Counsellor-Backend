@@ -10,17 +10,26 @@ import type { ModuleKey, Permission, PlatformPort } from './port.js';
  *   requireModule     -> "has this feature been switched on for your organisation?"
  *   requirePermission -> "does your role allow this action?"
  */
+
+/** Request header with which platform staff (permission platform:tenants:impersonate) act inside one organisation. */
+export const ACTING_HEADER = 'x-acting-tenant';
+const AUTH_PATH = /^\/api\/v1\/auth\//;
+
 export const createGuards = (port: PlatformPort) => {
   const authenticate: RequestHandler = async (req: Request, _res: Response, next: NextFunction) => {
     try {
       const header = req.headers.authorization;
       if (!header?.startsWith('Bearer ')) throw unauthorized();
-      const principal = await port.verifyAccessToken(header.slice(7));
-      req.principal = principal;
+      let principal = await port.verifyAccessToken(header.slice(7));
       const ctx = getContext();
+      if (ctx) ctx.userId = principal.userId; // set early so a refused acting attempt is audited against the real person
+      // Platform staff acting inside an organisation (docs/adr/0004). Never on /auth/*: login, refresh, password and MFA always act on the real user.
+      const acting = req.header(ACTING_HEADER)?.trim();
+      if (acting && !AUTH_PATH.test(req.originalUrl.split('?')[0]!)) principal = await port.resolveActing(principal, acting);
+      req.principal = principal;
       if (ctx) {
-        ctx.userId = principal.userId;
         ctx.tenantId = principal.tenantId ?? undefined;
+        if (principal.actingAs) ctx.actingAs = true;
       }
       next();
     } catch (e) {
@@ -42,7 +51,8 @@ export const createGuards = (port: PlatformPort) => {
     (req, _res, next) => {
       const p = req.principal;
       if (!p) return next(unauthorized());
-      const missing = needed.filter((x) => !p.permissions.includes(x));
+      // while acting, platform:* checks use the staff member's ORIGINAL platform permissions, everything else the acting set
+      const missing = needed.filter((x) => !(x.startsWith('platform:') ? (p.platformPermissions ?? p.permissions) : p.permissions).includes(x));
       if (missing.length) return next(forbidden(`Your role (${p.role}) is not allowed to do this.`));
       next();
     };

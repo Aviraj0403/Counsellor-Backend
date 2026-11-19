@@ -10,6 +10,8 @@ const auditSchema = new Schema(
     entityId: { type: String, index: true },
     meta: Schema.Types.Mixed,
     requestId: String,
+    /** true when platform staff did this while acting inside the organisation (actorId is then the staff member) */
+    actingAs: Boolean,
   },
   { timestamps: { createdAt: 'at', updatedAt: false } },
 );

@@ -38,3 +38,6 @@ outside service. Tick each line only after you have seen it work for real.
 - [ ] Re-inviting a portal user whose login was disabled needs an "enable user" call on the platform contract.
 - [ ] No automated browser tests for the admin UI: **click through every screen once** (nothing has been opened in a browser).
 - [ ] Translations: the menu, header, sign-in and page titles are English + Hindi; screen bodies are English.
+
+## 7. DPDP: platform staff access to student data
+- [ ] A Super Admin can now act inside an organisation and see its student data (docs/adr/0004). Access is audited (platform audit `tenant.acting_started`, organisation audit `acting.write` / `acting.blocked`) but needs a **contractual basis** with each organisation (data-processing terms naming platform support access), a written **access policy** (who, when, why, ticket reference, retention of the audit), and **legal review**. Decide whether to require MFA for Super Admin and a `reason` on every start.

@@ -9,7 +9,7 @@ export const audit = async (
 ) => {
   const ctx = getContext();
   try {
-    await AuditModel(tenantId).create({ ...entry, actorId: ctx?.userId, requestId: ctx?.requestId });
+    await AuditModel(tenantId).create({ ...entry, actorId: ctx?.userId, requestId: ctx?.requestId, ...(ctx?.actingAs ? { actingAs: true } : {}) });
   } catch (err) {
     logger.error({ err, entry }, 'audit write failed');
   }

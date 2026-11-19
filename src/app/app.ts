@@ -15,6 +15,7 @@ import { errorHandler } from '../shared/http/errorHandler.js';
 import { logger } from '../shared/infra/logger.js';
 import { requestContext } from '../shared/kernel/context.js';
 import { AppError } from '../shared/kernel/errors.js';
+import { actingAudit } from './actingAudit.js';
 import { registerCrossModuleWiring } from './events.js';
 import { wirePlatform } from './platform.js';
 
@@ -60,6 +61,7 @@ export const buildApp = () => {
   // Public surface (API keys, webhooks, SEO pages): no login, so a stricter per-IP limit.
   app.use('/public', rateLimit({ windowMs: 60_000, limit: 120, standardHeaders: 'draft-7', legacyHeaders: false }), buildPublicRouter());
 
+  app.use('/api/v1', actingAudit); // platform staff acting inside an organisation: audit every write and blocked attempt
   app.use('/api/v1', rateLimit({ windowMs: 60_000, limit: 300, standardHeaders: 'draft-7', legacyHeaders: false }));
   app.use('/api/v1', buildCoreRouter(guards)); // identity, organisations, billing, catalogue, platform audit
   app.use('/api/v1/platform/insights', insightsRoutes(guards)); // platform research: must come BEFORE the organisation router

@@ -11,8 +11,10 @@ export {
   patchPriceOverrides,
   setPlanKey,
   shapeTenant,
+  startActing,
   tenantExists,
   tenantSlugTaken,
+  updateTenantProfile,
   type TenantRecord,
 } from './application/organisations.service.js';
 export { organisationsRoutes } from './http/organisations.routes.js';

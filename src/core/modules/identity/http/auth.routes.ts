@@ -6,7 +6,7 @@ import type { Guards } from '../../../../contracts/guards.js';
 import { password } from '../../../../shared/http/schemas.js';
 import { validate } from '../../../../shared/http/validate.js';
 import { ROLES } from '../../catalog/index.js';
-import { enabledModules } from '../../organisations/index.js';
+import { enabledModules, getTenantRecord } from '../../organisations/index.js';
 import { changeOwnPassword, login, logoutEverywhere } from '../application/auth.service.js';
 import { getMfaStatus, mfaDisable, mfaEnable, mfaSetup, mfaVerifyLogin } from '../application/mfa.service.js';
 import { refreshSession, revokeSession } from '../application/session.service.js';
@@ -107,6 +107,7 @@ export const authRoutes = (g: Guards): Router => {
       const p = req.principal!;
       const mfa = await getMfaStatus(p.userId);
       const modules = p.tenantId ? await enabledModules(p.tenantId) : null;
+      const t = p.tenantId ? await getTenantRecord(p.tenantId) : null;
       res.json({
         user: { id: p.userId, name: p.name, email: p.email, role: p.role, roleLabel: (ROLES as any)[p.role]?.label },
         scope: p.scope,
@@ -114,6 +115,8 @@ export const authRoutes = (g: Guards): Router => {
         permissions: p.permissions,
         modules,
         mfa,
+        ...(t ? { organisation: { id: String(t._id), name: t.name, slug: t.slug, status: t.status, logoUrl: t.logoUrl ?? null, brandColor: t.brandColor ?? null } } : {}),
+        ...(p.actingAs ? { actingAs: p.actingAs, platformUser: { name: p.name, email: p.email } } : {}),
       });
     } catch (e) {
       next(e);

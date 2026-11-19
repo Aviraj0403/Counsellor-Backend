@@ -3,6 +3,7 @@ import type { TenantSummary } from '../../../../contracts/port.js';
 import { badRequest, notFound } from '../../../../shared/kernel/errors.js';
 import { recordPlatformAudit } from '../../audit/index.js';
 import { MODULE_BY_KEY, MODULE_CATALOG, resolveModules } from '../../catalog/index.js';
+import { isValidBrandColor, isValidLogoUrl } from '../domain/branding.js';
 import { Tenant, type TenantDoc } from '../infrastructure/tenant.model.js';
 
 export type TenantRecord = TenantDoc;
@@ -12,6 +13,8 @@ export const shapeTenant = (t: TenantRecord) => ({
   name: t.name,
   slug: t.slug,
   status: t.status,
+  logoUrl: t.logoUrl ?? null,
+  brandColor: t.brandColor ?? null,
   modules: resolveModules(MODULE_CATALOG, t.modules ?? {}),
   createdAt: t.createdAt,
 });
@@ -63,11 +66,32 @@ export const listTenants = async (q: { page: number; limit: number }) => {
   return { tenants: rows.map(shapeTenant), total, page: q.page, limit: q.limit };
 };
 
-export const renameTenant = async (tenantId: string, name: string) => {
-  const t = await Tenant.findByIdAndUpdate(tenantId, { name }, { new: true }).lean();
+export const renameTenant = async (tenantId: string, name: string) => updateTenantProfile(tenantId, { name });
+
+/** Name and/or branding. null clears the logo / colour. Used by platform staff (any organisation) and by an organisation's owner (their own, no name). */
+export const updateTenantProfile = async (tenantId: string, patch: { name?: string; logoUrl?: string | null; brandColor?: string | null }) => {
+  if (!isValidObjectId(tenantId)) throw notFound('Organisation');
+  if (patch.logoUrl && !isValidLogoUrl(patch.logoUrl)) throw badRequest('The logo must be an https:// link of at most 500 characters.');
+  if (patch.brandColor && !isValidBrandColor(patch.brandColor)) throw badRequest('The brand colour must look like #1a2b3c.');
+  const set: Record<string, unknown> = {};
+  for (const k of ['name', 'logoUrl', 'brandColor'] as const) if (patch[k] !== undefined) set[k] = patch[k];
+  if (!Object.keys(set).length) throw badRequest('Nothing to change.');
+  const t = await Tenant.findByIdAndUpdate(tenantId, { $set: set }, { new: true }).lean();
   if (!t) throw notFound('Organisation');
-  await recordPlatformAudit({ action: 'tenant.renamed', targetType: 'tenant', targetId: tenantId, tenantId, meta: { name } });
+  if (patch.name !== undefined) await recordPlatformAudit({ action: 'tenant.renamed', targetType: 'tenant', targetId: tenantId, tenantId, meta: { name: patch.name } });
+  if (patch.logoUrl !== undefined || patch.brandColor !== undefined) {
+    await recordPlatformAudit({ action: 'tenant.branding_changed', targetType: 'tenant', targetId: tenantId, tenantId, meta: { logoUrl: patch.logoUrl, brandColor: patch.brandColor } });
+  }
   return shapeTenant(t);
+};
+
+/** The admin calls this when platform staff switch into an organisation. Audited; refuses nothing for suspended organisations (support needs them). */
+export const startActing = async (tenantId: string, reason?: string) => {
+  if (!isValidObjectId(tenantId)) throw notFound('Organisation');
+  const t = await Tenant.findById(tenantId).lean();
+  if (!t) throw notFound('Organisation');
+  await recordPlatformAudit({ action: 'tenant.acting_started', targetType: 'tenant', targetId: tenantId, tenantId, meta: reason ? { reason } : undefined });
+  return { tenant: { id: String(t._id), name: t.name, slug: t.slug, logoUrl: t.logoUrl ?? null, status: t.status } };
 };
 
 export const setTenantStatus = async (tenantId: string, status: 'active' | 'suspended') => {
