@@ -37,6 +37,11 @@ export const PERMISSIONS = [
   'integrations:manage', // API keys, webhooks, Meta / WhatsApp settings
   'seo:manage',
   'whatsapp:send',
+  'appointments:read',
+  'appointments:write', // book, reschedule, cancel, mark no-show
+  'appointments:manage', // appointment types, working hours, leave, policies
+  'bots:read', // read bot conversations and handoffs
+  'bots:manage', // bot settings, knowledge, channels
   'audit:read',
   'team:read',
   'team:manage',
@@ -73,6 +78,8 @@ export const MODULE_KEYS = [
   'publicApi',
   'studentPortal',
   'collegePortal',
+  'appointments',
+  'aiBot',
 ] as const;
 export type ModuleKey = (typeof MODULE_KEYS)[number];
 

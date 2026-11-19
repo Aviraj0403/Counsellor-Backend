@@ -1,0 +1,1 @@
+{ "description": "Counselling appointments: bookable types, counsellor availability, public booking by link, reminders, waitlist and no-show tracking.", "dependsOn": ["audit", "leads"] }

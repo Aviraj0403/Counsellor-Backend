@@ -17,6 +17,8 @@ import { seoRoutes } from './modules/seoPages/index.js';
 import { documentRoutes } from './modules/documents/index.js';
 import { studentRoutes } from './modules/students/index.js';
 import { whatsappRoutes } from './modules/whatsapp/index.js';
+import { appointmentRoutes } from './modules/appointments/index.js';
+import { botsRoutes } from './modules/bots/index.js';
 
 /**
  * Composition of the counselling product (organisation-scoped API). Every route here already passed:
@@ -43,6 +45,8 @@ export const buildProductRouter = (g: Guards): Router => {
   r.use('/integrations/api', g.requireModule('publicApi'), publicApiRoutes(g));
   r.use('/whatsapp', g.requireModule('whatsapp'), whatsappRoutes(g));
   r.use('/seo', g.requireModule('seoPages'), seoRoutes(g));
+  r.use('/appointments', g.requireModule('appointments'), appointmentRoutes(g));
+  r.use('/bots', g.requireModule('aiBot'), botsRoutes(g));
   r.use('/portal', portalRoutes(g)); // each surface checks its own module (studentPortal / collegePortal) in the portal gate
   r.use('/reports', g.requireModule('reports'), reportsRoutes(g));
   r.use(auditRoutes(g)); // permission-gated, not a sellable module

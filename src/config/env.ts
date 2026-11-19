@@ -41,10 +41,22 @@ const schema = z.object({
   WHATSAPP_VERIFY_TOKEN: z.string().optional(),
   WHATSAPP_COST_PER_MESSAGE_PAISE: z.coerce.number().int().min(0).default(80),
 
+  // ---- AI admissions assistant (module aiBot). The key is optional: without it the bot reports itself offline.
+  ANTHROPIC_API_KEY: z.string().optional(),
+  /** Claude model id. Default claude-opus-5-5; the owner can set claude-haiku-5-5 for lower cost. */
+  AI_MODEL: z.string().default('claude-opus-5-5'),
+  /** Used to turn USD token prices into paise when metering AI cost */
+  AI_INR_PER_USD: z.coerce.number().positive().default(90),
+  /** Secret for the signed WhatsApp-inbound endpoint of the bot (HMAC-SHA256 of the raw body). Unset = endpoint refuses. */
+  BOT_INBOUND_SECRET: z.string().optional(),
+
   // ---- Razorpay (payment links for invoices)
   RAZORPAY_KEY_ID: z.string().optional(),
   RAZORPAY_KEY_SECRET: z.string().optional(),
   RAZORPAY_WEBHOOK_SECRET: z.string().optional(),
+
+  /** Shared secret for platform job endpoints (cron/pm2 calls POST /public/appointments/jobs/run-reminders with header x-jobs-secret). Unset or shorter than 16 characters = job endpoints refuse. */
+  JOBS_SECRET: z.string().optional(),
 });
 
 export type Env = z.infer<typeof schema>;

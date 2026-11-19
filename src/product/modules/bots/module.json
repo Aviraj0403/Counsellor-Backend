@@ -1,0 +1,1 @@
+{ "description": "AI admissions assistant: answers from the organisation's own college data, qualifies enquiries, books appointments and hands over to a counsellor.", "dependsOn": ["audit", "leads", "colleges", "students", "appointments"] }

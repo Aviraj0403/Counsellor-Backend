@@ -23,6 +23,14 @@ export interface DomainEvents {
   'document.verified': { tenantId: string; documentId: string; studentId: string; applicationId?: string; actorId?: string };
   'document.rejected': { tenantId: string; documentId: string; studentId: string; applicationId?: string; reason: string; actorId?: string };
   'commission.accrued': { tenantId: string; applicationId: string; collegeId: string; counsellorId?: string; totalPaise: number };
+  'appointment.booked': { tenantId: string; appointmentId: string; typeId: string; counsellorId: string; start: string; source: string; leadId?: string; actorId?: string };
+  'appointment.cancelled': { tenantId: string; appointmentId: string; typeId: string; counsellorId: string; start: string; cancelledBy: string; leadId?: string; actorId?: string };
+  'appointment.rescheduled': { tenantId: string; appointmentId: string; previousAppointmentId: string; typeId: string; counsellorId: string; start: string; previousStart: string; previousCounsellorId: string; leadId?: string; actorId?: string };
+  'appointment.completed': { tenantId: string; appointmentId: string; typeId: string; counsellorId: string; leadId?: string; actorId?: string };
+  'appointment.no_show': { tenantId: string; appointmentId: string; typeId: string; counsellorId: string; leadId?: string; actorId?: string };
+  'appointment.reminder_due': { tenantId: string; appointmentId: string; typeId: string; start: string; offsetMin: number; leadId?: string };
+  'bot.handoff': { tenantId: string; conversationId: string; reason: string; leadId?: string; assigneeId?: string };
+  'bot.lead_captured': { tenantId: string; conversationId: string; leadId: string; band: string };
 }
 
 export type EventName = keyof DomainEvents;

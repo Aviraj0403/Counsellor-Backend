@@ -15,6 +15,9 @@ import { registerEvents as registerApplications, registerHooks as registerApplic
 import { registerEvents as registerCommissions } from '../product/modules/commissions/index.js';
 import { registerEvents as registerDocuments, registerHooks as registerDocumentHooks } from '../product/modules/documents/index.js';
 import { registerEvents as registerPortal } from '../product/modules/portal/index.js';
+import { registerEvents as registerAppointments, registerHooks as registerAppointmentHooks } from '../product/modules/appointments/index.js';
+
+import { registerEvents as registerBots, registerHooks as registerBotHooks } from '../product/modules/bots/index.js';
 
 let wired = false;
 
@@ -32,6 +35,10 @@ export const registerCrossModuleWiring = (): void => {
   registerDocumentHooks();
   registerDocuments();
   registerPortal();
+  registerAppointmentHooks();
+  registerAppointments();
+  registerBotHooks();
+  registerBots();
 };
 
 /** Tests that need a clean slate call this together with clearEventHandlers() / clearHooks(). */

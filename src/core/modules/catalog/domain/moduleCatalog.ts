@@ -37,6 +37,8 @@ export const MODULE_CATALOG: ModuleDef[] = [
   { key: 'publicApi', label: 'API & webhooks', whatItDoes: 'Let colleges and partner systems connect their data to yours.', group: 'platform', optIn: true, priceMonthlyInr: 999, stage: 'live' },
   { key: 'studentPortal', label: 'Student status portal', whatItDoes: 'Students log in to see their application and document status.', group: 'channels', optIn: true, dependsOn: ['applications'], stage: 'live' },
   { key: 'collegePortal', label: 'College portal', whatItDoes: 'Colleges log in to see applications and update their status.', group: 'channels', optIn: true, dependsOn: ['applications'], stage: 'live' },
+  { key: 'appointments', label: 'Appointments & counselling slots', whatItDoes: 'Students book a counselling call or visit with a counsellor; reminders go out and no-shows are tracked.', group: 'crm', optIn: true, dependsOn: ['leads'], priceMonthlyInr: 799, stage: 'live' },
+  { key: 'aiBot', label: 'AI admissions assistant', whatItDoes: 'An assistant that answers student questions from your own college data, qualifies enquiries, books appointments and hands over to a counsellor.', group: 'channels', optIn: true, dependsOn: ['leads'], priceMonthlyInr: 1499, stage: 'live' },
 ];
 
 export const MODULE_BY_KEY = new Map(MODULE_CATALOG.map((m) => [m.key, m]));

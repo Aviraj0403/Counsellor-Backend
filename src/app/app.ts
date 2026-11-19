@@ -8,6 +8,7 @@ import { isAllowedOrigin } from '../core/modules/domains/index.js';
 import { buildCoreRouter } from '../core/routes.js';
 import { razorpayWebhookRoutes } from '../core/modules/billing/index.js';
 import { insightsRoutes } from '../product/modules/insights/index.js';
+import { metaPlatformRoutes } from '../product/modules/metaAds/index.js';
 import { buildPublicRouter } from '../product/publicRoutes.js';
 import { buildProductRouter } from '../product/routes.js';
 import { errorHandler } from '../shared/http/errorHandler.js';
@@ -62,6 +63,7 @@ export const buildApp = () => {
   app.use('/api/v1', rateLimit({ windowMs: 60_000, limit: 300, standardHeaders: 'draft-7', legacyHeaders: false }));
   app.use('/api/v1', buildCoreRouter(guards)); // identity, organisations, billing, catalogue, platform audit
   app.use('/api/v1/platform/insights', insightsRoutes(guards)); // platform research: must come BEFORE the organisation router
+  app.use('/api/v1/platform/meta', metaPlatformRoutes(guards)); // platform view of every organisation's Meta sync (before the organisation router)
   app.use('/api/v1', buildProductRouter(guards)); // leads, ledger, audit, ... (add product features in product/routes.ts)
 
   app.use((_req, _res, next) => next(new AppError(404, 'NOT_FOUND', 'This endpoint does not exist.')));

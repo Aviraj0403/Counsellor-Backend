@@ -7,7 +7,7 @@ import { logger } from '../../../../shared/infra/logger.js';
 import { audit } from '../../audit/index.js';
 import { createLead } from '../../leads/index.js';
 import { leadAdsUtm, mapLeadFields } from '../domain/meta.domain.js';
-import { MetaEventModel } from '../infrastructure/meta.model.js';
+import { MetaEventModel, MetaLeadLinkModel } from '../infrastructure/meta.model.js';
 import { loadConfig, tokenOf } from './meta.config.js';
 
 const OBJECT_ID = /^[a-f\d]{24}$/i;
@@ -72,6 +72,18 @@ export const handleLeadgen = async (tenantId: string, payload: unknown) => {
         autoAssign: true,
       });
       out.duplicate ? result.duplicates++ : result.created++;
+      if (!out.duplicate) {
+        // keep which campaign/ad this lead came from (Meta returns campaign_id/ad_id on the lead; the webhook has ad_id/form_id)
+        const g = res.data ?? {};
+        const str = (v: unknown) => (v ? String(v) : undefined);
+        await MetaLeadLinkModel(tenantId)
+          .updateOne(
+            { leadgenId: it.leadgenId },
+            { $setOnInsert: { leadgenId: it.leadgenId, leadId: String(out.lead._id), campaignId: str(g.campaign_id), campaignName: str(g.campaign_name)?.slice(0, 300), adsetId: str(g.adset_id), adId: str(g.ad_id) ?? it.adId, formId: str(g.form_id) ?? it.formId, at: new Date() } },
+            { upsert: true },
+          )
+          .catch((err) => logger.error({ err, tenantId }, 'could not store the campaign of a meta lead'));
+      }
       await log({ leadId: String(out.lead._id), eventName: 'leadgen', eventId: it.leadgenId, status: 'sent' });
     } catch (e: any) {
       result.failed++;
