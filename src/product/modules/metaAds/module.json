@@ -1,0 +1,1 @@
+{ "description": "Meta lead-ads webhook into leads and Conversions API events back to Meta (hashed, no raw personal data).", "dependsOn": ["audit", "leads"] }

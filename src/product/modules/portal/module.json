@@ -1,0 +1,1 @@
+{ "description": "Student status portal and college portal: invites, own-data views, college status updates, verified-document downloads.", "dependsOn": ["audit", "students", "colleges", "applications", "documents"] }

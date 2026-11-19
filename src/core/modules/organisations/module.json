@@ -1,0 +1,1 @@
+{ "description": "Organisations, status, module switches, plan fields.", "dependsOn": ["audit", "catalog"] }

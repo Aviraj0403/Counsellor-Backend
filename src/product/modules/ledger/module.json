@@ -1,0 +1,1 @@
+{ "description": "Double-entry ledger.", "dependsOn": ["audit"] }

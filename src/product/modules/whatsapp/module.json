@@ -1,0 +1,1 @@
+{ "description": "WhatsApp Cloud API: templates, consent-aware sending with cost metering, automation rules and the status webhook.", "dependsOn": ["audit", "leads", "students"] }

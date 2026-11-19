@@ -1,0 +1,1 @@
+{ "description": "Read-only organisation reports: funnel, sources, counsellors, applications, revenue (counts and totals only).", "dependsOn": ["applications", "colleges", "commissions", "leads"] }

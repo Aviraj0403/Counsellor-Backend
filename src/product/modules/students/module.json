@@ -1,0 +1,1 @@
+{ "description": "Student profiles: academics, preferences, guardian, consent, export and erasure.", "dependsOn": ["audit", "leads"] }

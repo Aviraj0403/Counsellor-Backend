@@ -1,0 +1,1 @@
+{ "description": "Applications of students to college courses with a status machine.", "dependsOn": ["audit", "students", "colleges"] }

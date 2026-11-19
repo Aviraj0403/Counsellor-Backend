@@ -1,0 +1,1 @@
+{ "description": "Public, search-friendly college pages with a lead form, per-college SEO overrides and sitemap.", "dependsOn": ["audit", "colleges", "leads"] }

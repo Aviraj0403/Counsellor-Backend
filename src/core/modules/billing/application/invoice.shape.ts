@@ -1,0 +1,23 @@
+/** API representation of an invoice. Kept in its own file so services can share it without importing each other. */
+export const shapeInvoice = (i: any) => ({
+  id: String(i._id),
+  invoiceNo: i.invoiceNo,
+  tenantId: i.tenantId,
+  period: i.period,
+  lines: i.lines,
+  subtotalPaise: i.subtotalPaise,
+  gstRateBps: i.gstRateBps ?? 1800,
+  supply: i.supply ?? null,
+  cgstPaise: i.cgstPaise ?? 0,
+  sgstPaise: i.sgstPaise ?? 0,
+  igstPaise: i.igstPaise ?? 0,
+  gstPaise: i.gstPaise,
+  totalPaise: i.totalPaise,
+  seller: i.seller ?? null,
+  buyer: i.buyer ?? null,
+  status: i.status,
+  issuedAt: i.issuedAt,
+  paidAt: i.paidAt,
+  paidRef: i.paidRef,
+  paymentLink: i.paymentLink ? { id: i.paymentLink.id, url: i.paymentLink.url, status: i.paymentLink.status, createdAt: i.paymentLink.createdAt } : null,
+});

@@ -1,0 +1,1 @@
+{ "description": "Encrypted admission document vault: upload, checklist, verification, audited signed downloads.", "dependsOn": ["audit", "students", "colleges", "applications"] }
