@@ -9,9 +9,10 @@ export {
   getApplication,
   getApplicationDetail,
   listApplicationsForCollege,
+  listApplicationsForCentral,
   listApplicationsForStudent,
 } from './application/application.service.js';
-export type { ApplicationSummary } from './application/application.service.js';
+export type { ApplicationSummary, CentralApplicationRow } from './application/application.service.js';
 export { applicationRoutes } from './http/application.routes.js';
 
 export const registerHooks = (): void => registerApplicationHooks();

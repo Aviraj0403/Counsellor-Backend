@@ -5,7 +5,8 @@ import { registerContributor, runGuards } from '../../../../shared/kernel/hooks.
 import { subscribe } from '../../../../shared/kernel/events.js';
 import { audit } from '../../audit/index.js';
 import { getCollege, getCourse } from '../../colleges/index.js';
-import { getStudent } from '../../students/index.js';
+import { createdRange, type CentralFilters, type CentralPageOf } from '../../../../shared/kernel/central.js';
+import { findStudentIdsForCentral, getStudent } from '../../students/index.js';
 import { canRecordFee, isStatus, nextStatuses, transitionProblem, type ApplicationStatus } from '../domain/application.domain.js';
 import { ApplicationModel } from '../infrastructure/application.model.js';
 
@@ -231,4 +232,46 @@ export const registerEvents = (): void => {
   subscribe('student.erased', async ({ tenantId, studentId }) => {
     await ApplicationModel(tenantId).updateMany({ studentId }, { $unset: { notes: 1, collegeRef: 1, 'offer.note': 1 } });
   });
+};
+
+// ---- CENTRAL DATA (platform view across organisations)
+export interface CentralApplicationRow {
+  id: string;
+  studentId: string;
+  studentName?: string;
+  collegeId: string;
+  collegeName?: string;
+  courseName?: string;
+  intake: { month: number; year: number };
+  status: string;
+  assignedTo?: string;
+  createdAt: Date;
+}
+
+/** One organisation's applications, newest first: the first `take` rows plus the total. A name/phone search matches the STUDENT. */
+export const listApplicationsForCentral = async (tenantId: string, f: CentralFilters, take: number): Promise<CentralPageOf<CentralApplicationRow>> => {
+  const filter: Record<string, unknown> = {};
+  if (f.status) filter.status = f.status;
+  if (f.assignedTo) filter.assignedTo = { $in: f.assignedTo };
+  const range = createdRange(f);
+  if (range) filter.createdAt = range;
+  if (f.q) filter.studentId = { $in: await findStudentIdsForCentral(tenantId, { q: f.q }) };
+  const M = ApplicationModel(tenantId);
+  const [rows, total] = await Promise.all([M.find(filter).sort({ createdAt: -1, _id: -1 }).limit(take).lean<any[]>(), M.countDocuments(filter)]);
+  const named = await withNames(tenantId, rows);
+  return {
+    total,
+    items: named.map((a) => ({
+      id: String(a._id),
+      studentId: String(a.studentId),
+      studentName: a.studentName,
+      collegeId: String(a.collegeId),
+      collegeName: a.collegeName,
+      courseName: a.courseName,
+      intake: a.intake,
+      status: a.status,
+      assignedTo: a.assignedTo,
+      createdAt: a.createdAt,
+    })),
+  };
 };

@@ -6,7 +6,9 @@ import mongoose from 'mongoose';
 import { env } from '../config/env.js';
 import { isAllowedOrigin } from '../core/modules/domains/index.js';
 import { buildCoreRouter } from '../core/routes.js';
+import { recordPlatformAudit } from '../core/modules/audit/index.js';
 import { razorpayWebhookRoutes } from '../core/modules/billing/index.js';
+import { centralRoutes } from '../product/modules/central/index.js';
 import { insightsRoutes } from '../product/modules/insights/index.js';
 import { metaPlatformRoutes } from '../product/modules/metaAds/index.js';
 import { buildPublicRouter } from '../product/publicRoutes.js';
@@ -66,6 +68,8 @@ export const buildApp = () => {
   app.use('/api/v1', buildCoreRouter(guards)); // identity, organisations, billing, catalogue, platform audit
   app.use('/api/v1/platform/insights', insightsRoutes(guards)); // platform research: must come BEFORE the organisation router
   app.use('/api/v1/platform/meta', metaPlatformRoutes(guards)); // platform view of every organisation's Meta sync (before the organisation router)
+  // platform view across organisations (superadmin only, masked, audited). The audit writer comes from the core, injected here because product code may not import it.
+  app.use('/api/v1/platform/central', centralRoutes(guards, { recordView: ({ resource, tenantId, filters }) => recordPlatformAudit({ action: 'central.viewed', targetType: 'tenant', targetId: tenantId, tenantId, meta: { resource, filters } }) }));
   app.use('/api/v1', buildProductRouter(guards)); // leads, ledger, audit, ... (add product features in product/routes.ts)
 
   app.use((_req, _res, next) => next(new AppError(404, 'NOT_FOUND', 'This endpoint does not exist.')));

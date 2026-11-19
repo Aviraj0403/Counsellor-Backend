@@ -11,7 +11,8 @@ import { registerContributor, registerGuard } from '../../../../shared/kernel/ho
 import { getApplication } from '../../applications/index.js';
 import { audit } from '../../audit/index.js';
 import { getRequiredDocuments } from '../../colleges/index.js';
-import { getStudent } from '../../students/index.js';
+import { createdRange, type CentralFilters, type CentralPageOf } from '../../../../shared/kernel/central.js';
+import { findStudentIdsForCentral, getStudent, studentNamesForCentral } from '../../students/index.js';
 import {
   blockMessage,
   computeChecklist,
@@ -300,4 +301,50 @@ export const registerEvents = (): void => {
     }
     await M.deleteMany({ studentId });
   });
+};
+
+// ---- CENTRAL DATA (platform view across organisations): METADATA ONLY.
+/** Deliberately tiny: no file name (it can carry a person's name), no type of file, no hash, no storage key, no link, no content. */
+export interface CentralDocumentRow {
+  id: string;
+  type: string;
+  status: string;
+  studentId: string;
+  studentName?: string;
+  applicationId?: string;
+  uploadedAt: Date;
+  createdAt: Date;
+}
+
+const liveDocuments = { deletedAt: { $exists: false }, supersededBy: { $exists: false } };
+
+/** One organisation's current documents (not deleted, not replaced by a newer version), newest first. A name/phone search or assignee matches the STUDENT. */
+export const listDocumentsForCentral = async (tenantId: string, f: CentralFilters, take: number): Promise<CentralPageOf<CentralDocumentRow>> => {
+  const filter: Record<string, unknown> = { ...liveDocuments };
+  if (f.status) filter.status = f.status;
+  const range = createdRange(f);
+  if (range) filter.createdAt = range;
+  if (f.q || f.assignedTo) filter.studentId = { $in: await findStudentIdsForCentral(tenantId, { q: f.q, assignedTo: f.assignedTo }) };
+  const M = DocumentModel(tenantId);
+  const [rows, total] = await Promise.all([M.find(filter).sort({ createdAt: -1, _id: -1 }).limit(take).lean<any[]>(), M.countDocuments(filter)]);
+  const names = await studentNamesForCentral(tenantId, rows.map((r) => String(r.studentId)));
+  return {
+    total,
+    items: rows.map((d) => ({
+      id: String(d._id),
+      type: d.type,
+      status: d.status,
+      studentId: String(d.studentId),
+      studentName: names.get(String(d.studentId)),
+      applicationId: d.applicationId,
+      uploadedAt: d.createdAt,
+      createdAt: d.createdAt,
+    })),
+  };
+};
+
+/** How many current documents are in each review status. Counts only. */
+export const documentCountsByStatus = async (tenantId: string): Promise<Record<string, number>> => {
+  const rows = await DocumentModel(tenantId).aggregate([{ $match: liveDocuments }, { $group: { _id: '$status', n: { $sum: 1 } } }]);
+  return Object.fromEntries(rows.map((r: any) => [String(r._id), r.n as number]));
 };

@@ -104,7 +104,7 @@ export const setTenantStatus = async (tenantId: string, status: 'active' | 'susp
 
 export const listTenantSummaries = async (): Promise<TenantSummary[]> => {
   const rows = await Tenant.find().sort({ name: 1 }).lean();
-  return rows.map((t) => ({ id: String(t._id), name: t.name, status: t.status }));
+  return rows.map((t) => ({ id: String(t._id), name: t.name, status: t.status, slug: t.slug, logoUrl: t.logoUrl ?? null }));
 };
 
 // ------------------------------------------------------------------ reads and writes other modules need (their only door into Tenant data)

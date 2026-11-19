@@ -4,7 +4,7 @@ import { registerHooks as registerAppointmentGuards } from './application/appoin
 import { configStatus } from './application/config.status.js';
 
 // The three functions below are the contract the `bots` module codes against. Keep their signatures stable.
-export { listBookableTypes, getAvailableSlots, bookAppointment } from './application/appointment.api.js';
+export { listBookableTypes, getAvailableSlots, bookAppointment, countUpcomingAppointments } from './application/appointment.api.js';
 export { registerEvents } from './application/appointment.events.js';
 export { configStatus } from './application/config.status.js';
 export { runDueReminders } from './application/appointment.reminders.js';

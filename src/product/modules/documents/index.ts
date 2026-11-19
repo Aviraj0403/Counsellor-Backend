@@ -3,7 +3,7 @@ import { registerConfigStatus } from '../../../shared/kernel/configStatus.js';
 import { registerEvents as registerDocumentEvents, registerHooks as registerDocumentHooks } from './application/document.service.js';
 import { configStatus } from './application/config.status.js';
 
-export { checklistFor, getDocumentMeta, issueDownloadLinkFor, listDocumentsForStudent, storeDocument } from './application/document.service.js';
+export { checklistFor, documentCountsByStatus, getDocumentMeta, issueDownloadLinkFor, listDocumentsForCentral, listDocumentsForStudent, storeDocument, type CentralDocumentRow } from './application/document.service.js';
 export { configStatus } from './application/config.status.js';
 export { documentPublicRoutes, documentRoutes } from './http/document.routes.js';
 

@@ -63,6 +63,10 @@ describe('role matrix', () => {
     expect(permissionsFor('platform_ops')).not.toContain('platform:costs:manage');
     expect(permissionsFor('platform_ops')).toContain('platform:insights:read');
   });
+  it('central data access is superadmin only', () => {
+    for (const k of ['platform_ops', 'platform_finance', 'platform_ads', ...TENANT_ROLE_KEYS]) expect(permissionsFor(k)).not.toContain('platform:central:read');
+    expect(permissionsFor('superadmin')).toContain('platform:central:read');
+  });
   it('staff roles never include owner; platform ops can switch modules', () => {
     expect(STAFF_ROLE_KEYS).not.toContain('owner');
     expect(STAFF_ROLE_KEYS).not.toContain('student');

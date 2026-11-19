@@ -1,5 +1,5 @@
 import { badRequest } from '../../../../shared/kernel/errors.js';
-import { AppointmentTypeModel } from '../infrastructure/appointment.model.js';
+import { AppointmentModel, AppointmentTypeModel } from '../infrastructure/appointment.model.js';
 import { bookCore, loadType, slotsFor, validateRange } from './appointment.core.js';
 
 /** Types a student or a bot may book online. */
@@ -27,3 +27,7 @@ export const bookAppointment = async (
   const { doc, token } = await bookCore(tenantId, input);
   return { id: String(doc._id), start: doc.start as Date, end: doc.end as Date, counsellorId: doc.counsellorId as string, manageToken: token };
 };
+
+/** COUNT ONLY, for the platform central summary: active (booked or confirmed) appointments that have not started yet. */
+export const countUpcomingAppointments = async (tenantId: string): Promise<number> =>
+  AppointmentModel(tenantId).countDocuments({ active: true, start: { $gte: new Date() } });

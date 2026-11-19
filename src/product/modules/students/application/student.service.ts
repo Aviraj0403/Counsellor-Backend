@@ -3,6 +3,7 @@ import { getPlatform } from '../../../../contracts/registry.js';
 import { badRequest, conflict, notFound } from '../../../../shared/kernel/errors.js';
 import { publish } from '../../../../shared/kernel/events.js';
 import { collectSections } from '../../../../shared/kernel/hooks.js';
+import { createdRange, type CentralFilters, type CentralPageOf } from '../../../../shared/kernel/central.js';
 import { audit } from '../../audit/index.js';
 import { findLeadById } from '../../leads/index.js';
 import { ERASED_NAME, escapeRegex, guardianConsentProblem, normalizePhone } from '../domain/student.domain.js';
@@ -215,3 +216,55 @@ export const eraseStudent = async (p: Principal, id: string, reason: string) => 
 /** Public API helpers for other modules (inside one organisation). */
 export const getStudent = async (tenantId: string, id: string) => (OBJECT_ID.test(id) ? StudentModel(tenantId).findById(id).lean<any>() : null);
 export const studentExists = async (tenantId: string, id: string): Promise<boolean> => (OBJECT_ID.test(id) ? !!(await StudentModel(tenantId).exists({ _id: id })) : false);
+
+// ---- CENTRAL DATA (platform view across organisations). Raw values: the `central` module masks them.
+export interface CentralStudentRow {
+  id: string;
+  name: string;
+  phone?: string;
+  email?: string;
+  city?: string;
+  status: string;
+  leadId?: string;
+  assignedTo?: string;
+  createdAt: Date;
+}
+
+const centralStudentFilter = (f: CentralFilters): Record<string, unknown> => {
+  const filter: Record<string, unknown> = f.status ? { status: f.status } : { status: { $ne: 'erased' } };
+  if (f.assignedTo) filter.assignedTo = { $in: f.assignedTo };
+  const range = createdRange(f);
+  if (range) filter.createdAt = range;
+  if (f.q) {
+    const digits = f.q.replace(/\D/g, '');
+    filter.$or = [{ name: new RegExp(escapeRegex(f.q), 'i') }, ...(digits ? [{ phone: new RegExp(digits) }] : [])];
+  }
+  return filter;
+};
+
+/** One organisation's students (erased ones never listed), newest first: the first `take` rows plus the total. */
+export const listStudentsForCentral = async (tenantId: string, f: CentralFilters, take: number): Promise<CentralPageOf<CentralStudentRow>> => {
+  const filter = centralStudentFilter(f);
+  const M = StudentModel(tenantId);
+  const [rows, total] = await Promise.all([M.find(filter).sort({ createdAt: -1, _id: -1 }).limit(take).lean<any[]>(), M.countDocuments(filter)]);
+  return {
+    total,
+    items: rows.map((s) => ({ id: String(s._id), name: s.name, phone: s.phone, email: s.email, city: s.address?.city, status: s.status, leadId: s.leadId, assignedTo: s.assignedTo, createdAt: s.createdAt })),
+  };
+};
+
+/** Ids of students matching a name/phone search and/or an assignee. Lets applications and documents filter "by student" without touching student data. Capped. */
+export const findStudentIdsForCentral = async (tenantId: string, f: Pick<CentralFilters, 'q' | 'assignedTo'>, cap = 1000): Promise<string[]> => {
+  const rows = await StudentModel(tenantId).find(centralStudentFilter({ q: f.q, assignedTo: f.assignedTo })).select('_id').limit(cap).lean<any[]>();
+  return rows.map((r) => String(r._id));
+};
+
+/** Student names by id (erased students keep their anonymised name). */
+export const studentNamesForCentral = async (tenantId: string, ids: string[]): Promise<Map<string, string>> => {
+  const valid = [...new Set(ids)].filter((i) => OBJECT_ID.test(i));
+  const rows = valid.length ? await StudentModel(tenantId).find({ _id: { $in: valid } }).select('name').lean<any[]>() : [];
+  return new Map(rows.map((r) => [String(r._id), r.name as string]));
+};
+
+/** Count of students that are not erased. */
+export const countStudents = async (tenantId: string): Promise<number> => StudentModel(tenantId).countDocuments({ status: { $ne: 'erased' } });

@@ -68,6 +68,7 @@ docs/                   ADMIN_GUIDE, ARCHITECTURE, ROADMAP, RUNBOOK, SECURITY, a
 | product | `seoPages` | public SEO college pages and lead form |
 | product | `publicApi` | API keys, public API, signed webhooks |
 | product | `portal` | student and college logins (their own slice only) |
+| product | `central` | platform (superadmin) view across organisations: masked leads/students/applications, document metadata only, audited. Reads each organisation through the modules' public listing functions; the audit writer is injected from `app/app.ts` |
 
 ### Inside a module
 

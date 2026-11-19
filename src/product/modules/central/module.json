@@ -1,0 +1,1 @@
+{ "description": "Platform staff view across every organisation's leads, students, applications and document metadata (masked, audited, read-only).", "dependsOn": ["leads", "students", "applications", "documents", "appointments"] }

@@ -58,6 +58,7 @@ export const PERMISSIONS = [
   'platform:settings:manage', // our company details used on invoices (legal name, GSTIN, address)
   'platform:domains:manage', // which websites may call this API (CORS whitelist)
   'platform:tenants:impersonate', // act inside an organisation (superadmin only; audited, see docs/adr/0004)
+  'platform:central:read', // central view of every organisation's leads, students, applications and document METADATA (superadmin only; masked, audited)
 ] as const;
 export type Permission = (typeof PERMISSIONS)[number];
 
@@ -121,6 +122,8 @@ export interface TenantSummary {
   id: string;
   name: string;
   status: 'active' | 'suspended';
+  slug?: string;
+  logoUrl?: string | null;
 }
 
 /** Running costs the platform pays on an organisation's behalf (WhatsApp messages, SMS, storage...). */

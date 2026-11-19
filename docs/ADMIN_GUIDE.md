@@ -48,6 +48,7 @@ Every module below is built. Features that call outside services (Meta, WhatsApp
 | API & webhooks | Add-on | API keys (website forms, college-tied keys), signed outgoing webhooks with retry | , |
 | Student status portal | Add-on | A student logs in and sees only their own applications and uploads their documents | Applications |
 | College portal | Add-on | A college employee sees only their college's applications (no contact details) and updates status | Applications |
+| Central data | Platform screen (Super Admin only, not sold, not switchable) | One view over every organisation's leads, students, applications and document details, read-only, masked and audited. Only organisations that have the matching module on are read. See "Central data" below | , |
 
 If a module's "Needs first" module is off, the module stays off automatically, so nothing half-works.
 Live list: `GET /api/v1/catalog/modules`.
@@ -178,3 +179,16 @@ For support: a Super Admin can switch into an organisation and see exactly what 
 - Every write and every blocked attempt appears in **that organisation's** audit (`GET /api/v1/audit`) as `acting.write` / `acting.blocked` with `actingAs: true` and your user id. `/platform/*` calls keep your normal platform permissions. Sign-in, password and MFA calls always act on you, not the organisation.
 - `GET /api/v1/me` with the header returns the organisation's menu data plus `actingAs` and `platformUser`.
 - Logo: `PATCH /api/v1/platform/tenants/:id` `{ logoUrl, brandColor }` (platform) or `PATCH /api/v1/organisation/profile` (the Owner). `logoUrl` is an https link (max 500 characters); `null` clears it. It is returned in the tenant list, the workspace and `/me`.
+
+## Central data (Super Admin only)
+
+One page, **Organisations > Central data**, to look across all organisations without opening each one. The records still live in each organisation's own database: every request reads the organisations one at a time with the same filters and merges the answer (newest first), so nothing is copied or stored centrally.
+
+- **Who:** only a Super Admin (permission `platform:central:read`). Platform Operations, Finance, Ads and every organisation user get 403.
+- **What you see:** summary cards per organisation (leads, students, applications, documents by review status, upcoming appointments) with totals, then four tabs, Leads, Students, Applications, Documents, each with a filter bar (organisation with logo, status, name or phone search, dates, counsellor name) and a paged table with an organisation column.
+- **Only organisations with the module on:** an organisation without Students never appears in the Students tab, and its database is not read for it. Suspended organisations are included and marked "suspended".
+- **Masked on purpose:** names are shown in full, phones as `+91 ••••• ••123` and emails as `r•••@gmail.com`. **Documents are details only** (type, review status, which student, when uploaded). No file name, no file, no download link ever appears here.
+- **Full detail:** the row action **Open in organisation** starts acting in that organisation (see "Acting inside an organisation" below, audited) and opens the matching screen.
+- **Limits:** at most 100 organisations per request (the response says `truncated: true`; pick one organisation to see the rest), 50 rows per page, and paging at most 500 rows deep (narrow the filters instead). If one organisation cannot be read the response says `partial: true`.
+- **Audit:** every request writes a platform audit row `central.viewed` with what was asked (list name, organisation, filters, page), never the rows returned. Rate limit: 120 requests a minute.
+- **API:** `GET /api/v1/platform/central/summary` and `GET /api/v1/platform/central/{leads|students|applications|documents}?page&limit&tenantId&status&q&createdFrom&createdTo&counsellor`.
