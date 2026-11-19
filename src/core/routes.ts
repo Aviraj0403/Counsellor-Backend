@@ -7,6 +7,7 @@ import { domainsRoutes } from './modules/domains/index.js';
 import { authRoutes, countActiveStaffAccounts, teamRoutes } from './modules/identity/index.js';
 import { onboardingRoutes } from './modules/onboarding/index.js';
 import { organisationsRoutes } from './modules/organisations/index.js';
+import { workspaceRoutes } from './modules/workspace/index.js';
 
 /**
  * Composition of the platform core: the ONLY place that knows every core module.
@@ -22,5 +23,6 @@ export const buildCoreRouter = (g: Guards): Router => {
   r.use(platformAuditRoutes(g));
   r.use(domainsRoutes(g)); // which websites may call this API
   r.use(teamRoutes(g));
+  r.use(workspaceRoutes(g)); // platform staff view of one organisation (configuration and health only)
   return r;
 };

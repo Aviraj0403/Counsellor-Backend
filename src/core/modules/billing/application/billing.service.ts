@@ -63,3 +63,9 @@ export const getBillingView = async (tenantId: string) => {
     invoices: invoices.map(shapeInvoice),
   };
 };
+
+/** Plan name and what the current set-up would cost per month (before GST), for the platform staff workspace. */
+export const getPlanSummary = async (tenantId: string) => {
+  const { plan, charge } = await loadBillingContext(tenantId);
+  return { planKey: plan?.key ?? null, planName: plan?.name ?? null, maxStaff: plan?.maxStaff ?? null, monthlySubtotalPaise: charge.subtotalPaise };
+};

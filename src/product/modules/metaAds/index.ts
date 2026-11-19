@@ -3,3 +3,4 @@ export { registerEvents, settle as settleMetaAds } from './application/meta.conv
 export { metaAdsRoutes, metaWebhookRoutes } from './http/meta.routes.js';
 export { metaJobsRoutes, metaPlatformRoutes } from './http/meta.routes.js';
 export { runSyncAll } from './application/meta.sync.js';
+export { configStatus, registerMetaConfigStatus as registerHooks } from './application/config.status.js';

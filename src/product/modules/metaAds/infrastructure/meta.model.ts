@@ -49,7 +49,7 @@ export const MetaEventModel = defineTenantModel('MetaEvent', eventSchema);
 
 /** One row per day and campaign. spend = integer minor units of `currency` (paise when INR). */
 const insightSchema = new Schema({
-  date: { type: String, required: true, match: /^d{4}-d{2}-d{2}$/ },
+  date: { type: String, required: true, match: /^\d{4}-\d{2}-\d{2}$/ },
   campaignId: { type: String, required: true },
   campaignName: { type: String, default: '' },
   accountId: String,

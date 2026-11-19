@@ -121,3 +121,13 @@ export const resetTeamPassword = async (tenantId: string, userId: string, newPas
   await recordPlatformAudit({ action: 'user.password_reset', targetType: 'user', targetId: userId, tenantId });
   return { id: String(u._id), sessionsEnded: true };
 };
+
+/** Active staff per role (counts only), for the platform staff workspace. */
+export const countStaffByRole = async (tenantId: string): Promise<{ role: string; label: string; count: number }[]> => {
+  const rows = await User.aggregate<{ _id: string; count: number }>([
+    { $match: { tenantId, status: 'active', role: { $nin: PORTAL_ROLE_KEYS } } },
+    { $group: { _id: '$role', count: { $sum: 1 } } },
+    { $sort: { count: -1 } },
+  ]);
+  return rows.map((r) => ({ role: r._id, label: (ROLES as any)[r._id]?.label ?? r._id, count: r.count }));
+};

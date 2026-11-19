@@ -66,7 +66,7 @@ export const putConfig = async (p: Principal, input: ConfigInput) => {
     apiVersion = input.apiVersion.trim() === '' ? '' : (normaliseGraphVersion(input.apiVersion) ?? undefined);
     if (apiVersion === undefined) throw badRequest('The API version must look like v21.0.');
   }
-  if (input.accessToken && (input.accessToken.length < 20 || /s/.test(input.accessToken))) throw badRequest('That does not look like a Meta access token (it is one long string with no spaces).');
+  if (input.accessToken && (input.accessToken.length < 20 || /\s/.test(input.accessToken))) throw badRequest('That does not look like a Meta access token (it is one long string with no spaces).');
   const Model = MetaConfigModel(tenantId);
   const existing = await Model.findOne({ key: 'main' }).lean<any>();
   const set: Record<string, unknown> = {};

@@ -1,0 +1,1 @@
+{ "description": "Platform-staff view of one organisation: identity, modules with setup/health, plan and team counts. Configuration and health only, never organisation data.", "dependsOn": ["billing", "catalog", "identity", "organisations"] }
