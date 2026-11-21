@@ -8,6 +8,7 @@ export interface TenantSettings {
 /** An organisation (counsellor business). Master DB. Student/lead data does NOT live here, it lives in the organisation's own database. */
 export interface TenantDoc {
   _id: any;
+  projectId?: string; // 5-digit formatted ID, e.g. "00001", "00002"
   name: string;
   slug: string;
   status: 'active' | 'suspended';
@@ -26,6 +27,7 @@ export interface TenantDoc {
 
 const tenantSchema = new Schema<TenantDoc>(
   {
+    projectId: { type: String, unique: true, sparse: true },
     name: { type: String, required: true, trim: true, maxlength: 120 },
     slug: { type: String, required: true, unique: true, lowercase: true, match: /^[a-z0-9-]{3,40}$/ },
     status: { type: String, enum: ['active', 'suspended'], default: 'active' },

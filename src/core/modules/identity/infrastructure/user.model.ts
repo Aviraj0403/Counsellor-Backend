@@ -3,6 +3,7 @@ import mongoose, { Schema, model, type Model } from 'mongoose';
 export interface UserDoc {
   _id: any;
   email: string;
+  phone?: string;
   name: string;
   passwordHash: string;
   role: string;
@@ -27,6 +28,7 @@ export interface UserDoc {
 const userSchema = new Schema<UserDoc>(
   {
     email: { type: String, required: true, unique: true, lowercase: true, trim: true },
+    phone: { type: String, trim: true, index: true },
     name: { type: String, required: true, trim: true, maxlength: 120 },
     passwordHash: { type: String, required: true, select: false },
     role: { type: String, required: true },

@@ -8,8 +8,14 @@ import { DUMMY_HASH, hashPassword, verifyPassword, verifyToken } from '../infras
 import { createMfaToken } from './mfa.service.js';
 import { issueSession, revokeAllSessions, type SessionContext } from './session.service.js';
 
-export const login = async (email: string, password: string, ctx: SessionContext = {}) => {
-  const user = await User.findOne({ email: email.toLowerCase() }).select('+passwordHash');
+export const login = async (identifier: string, password: string, ctx: SessionContext = {}) => {
+  const clean = identifier.trim().toLowerCase();
+  // Find by email OR by phone number (+91...)
+  const query = clean.includes('@')
+    ? { email: clean }
+    : { $or: [{ email: clean }, { phone: clean }, { phone: clean.replace(/\D/g, '') }, { phone: `+91${clean.slice(-10)}` }] };
+
+  const user = await User.findOne(query).select('+passwordHash');
   const ok = await verifyPassword(password, user?.passwordHash ?? DUMMY_HASH);
   if (!user || !ok || user.status !== 'active') throw unauthorized('Email or password is incorrect.');
   if (user.tenantId && !(await getTenantAccess(user.tenantId)).active) {

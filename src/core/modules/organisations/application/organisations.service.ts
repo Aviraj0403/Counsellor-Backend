@@ -5,11 +5,22 @@ import { recordPlatformAudit } from '../../audit/index.js';
 import { MODULE_BY_KEY, MODULE_CATALOG, resolveModules } from '../../catalog/index.js';
 import { isValidBrandColor, isValidLogoUrl } from '../domain/branding.js';
 import { Tenant, type TenantDoc } from '../infrastructure/tenant.model.js';
+import { Counter } from '../../billing/infrastructure/invoice.model.js';
+
+export const getNextTenantProjectId = async (): Promise<string> => {
+  const c = await Counter.findOneAndUpdate(
+    { _id: 'tenant-project-id' },
+    { $inc: { seq: 1 } },
+    { upsert: true, new: true },
+  );
+  return String(c.seq).padStart(5, '0');
+};
 
 export type TenantRecord = TenantDoc;
 
 export const shapeTenant = (t: TenantRecord) => ({
   id: String(t._id),
+  projectId: t.projectId || (t._id ? String(t._id).slice(-5).padStart(5, '0') : '00001'),
   name: t.name,
   slug: t.slug,
   status: t.status,
@@ -138,7 +149,11 @@ export const getTenantAccess = async (tenantId: string): Promise<{ exists: boole
   return { exists: !!t, active: t?.status === 'active' };
 };
 
-export const createTenantRecord = async (input: { name: string; slug: string }): Promise<string> => String((await Tenant.create(input))._id);
+export const createTenantRecord = async (input: { name: string; slug: string }): Promise<string> => {
+  const projectId = await getNextTenantProjectId();
+  const doc = await Tenant.create({ ...input, projectId });
+  return String(doc._id);
+};
 export const deleteTenantRecord = async (tenantId: string): Promise<void> => {
   await Tenant.deleteOne({ _id: tenantId });
 };

@@ -49,7 +49,16 @@ export const getWorkspace = async (tenantId: string) => {
   });
 
   return {
-    organisation: { id: String(t._id), name: t.name, slug: t.slug, status: t.status, logoUrl: t.logoUrl ?? null, brandColor: t.brandColor ?? null, createdAt: t.createdAt },
+    organisation: {
+      id: String(t._id),
+      projectId: t.projectId || (t._id ? String(t._id).slice(-5).padStart(5, '0') : '00001'),
+      name: t.name,
+      slug: t.slug,
+      status: t.status,
+      logoUrl: t.logoUrl ?? null,
+      brandColor: t.brandColor ?? null,
+      createdAt: t.createdAt,
+    },
     plan: { key: plan.planKey, name: plan.planName, monthlySubtotalPaise: plan.monthlySubtotalPaise },
     team: { active: staff.active, blocked: staff.blocked, maxStaff: plan.maxStaff, byRole },
     health: rollUpHealth(modules),

@@ -23,7 +23,7 @@ export const authRoutes = (g: Guards): Router => {
   // Per-IP brake on top of the per-account lockout inside the MFA service.
   const mfaLimiter = rateLimit({ windowMs: 15 * 60_000, limit: env.LOGIN_RATE_LIMIT_MAX * 3, standardHeaders: 'draft-7', legacyHeaders: false });
 
-  r.post('/auth/login', loginLimiter, validate({ body: z.object({ email: z.string().email(), password: z.string().min(1).max(128) }) }), async (req, res, next) => {
+  r.post('/auth/login', loginLimiter, validate({ body: z.object({ email: z.string().min(1), password: z.string().min(1).max(128) }) }), async (req, res, next) => {
     try {
       res.json(await login(req.valid.body.email, req.valid.body.password, ctxOf(req)));
     } catch (e) {
