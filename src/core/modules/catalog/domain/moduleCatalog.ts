@@ -21,24 +21,33 @@ export interface ModuleDef {
 }
 
 export const MODULE_CATALOG: ModuleDef[] = [
-  { key: 'leads', label: 'Leads & enquiries', whatItDoes: 'Capture student enquiries, assign them to counsellors and track every stage until admission.', group: 'crm', core: true, stage: 'live' },
-  { key: 'team', label: 'Team & roles', whatItDoes: 'Add your counsellors, sales, marketing, support and accounts staff with the right access.', group: 'crm', core: true, stage: 'live' },
-  { key: 'followups', label: 'Follow-ups & activity', whatItDoes: 'Tasks, reminders and call / message notes on every lead and student, so no enquiry is forgotten.', group: 'crm', dependsOn: ['leads'], stage: 'live' },
-  { key: 'ledger', label: 'Ledgers & commission', whatItDoes: 'Student fees, college commission and counsellor payouts in one tamper-proof ledger.', group: 'finance', optIn: true, priceMonthlyInr: 999, stage: 'live' },
-  { key: 'commissions', label: 'Commission rules & payouts', whatItDoes: 'College commission per admission, counsellor share and platform cut, posted to the ledger automatically.', group: 'finance', optIn: true, dependsOn: ['ledger', 'applications'], priceMonthlyInr: 799, stage: 'live' },
-  { key: 'students', label: 'Student profiles', whatItDoes: 'Full student profile: marks, preferences, family details and consent.', group: 'admissions', optIn: true, dependsOn: ['leads'], stage: 'live' },
-  { key: 'colleges', label: 'College directory', whatItDoes: 'Colleges, courses, fees, intakes and eligibility to shortlist from.', group: 'admissions', optIn: true, stage: 'live' },
-  { key: 'applications', label: 'Applications & status', whatItDoes: 'Apply to a college for a student and follow the application until the result.', group: 'admissions', optIn: true, dependsOn: ['students', 'colleges'], stage: 'live' },
-  { key: 'documents', label: 'Document vault', whatItDoes: 'Collect, verify and securely store admission documents.', group: 'admissions', optIn: true, dependsOn: ['students'], stage: 'live' },
-  { key: 'reports', label: 'Reports & analytics', whatItDoes: 'Counsellor performance, conversion funnel and source-wise cost per admission.', group: 'crm', optIn: true, dependsOn: ['leads'], priceMonthlyInr: 499, stage: 'live' },
-  { key: 'whatsapp', label: 'WhatsApp automation', whatItDoes: 'Automatic WhatsApp follow-ups, reminders and status updates to students.', group: 'channels', optIn: true, dependsOn: ['leads'], priceMonthlyInr: 999, stage: 'live' },
-  { key: 'metaAds', label: 'Meta Ads connection', whatItDoes: 'Pull Meta lead-ads in automatically and send admission results back to improve ad targeting.', group: 'marketing', optIn: true, dependsOn: ['leads'], priceMonthlyInr: 1499, stage: 'live' },
-  { key: 'seoPages', label: 'SEO college pages', whatItDoes: 'Search-friendly public college and course pages that bring in enquiries.', group: 'marketing', optIn: true, dependsOn: ['colleges'], priceMonthlyInr: 799, stage: 'live' },
-  { key: 'publicApi', label: 'API & webhooks', whatItDoes: 'Let colleges and partner systems connect their data to yours.', group: 'platform', optIn: true, priceMonthlyInr: 999, stage: 'live' },
-  { key: 'studentPortal', label: 'Student status portal', whatItDoes: 'Students log in to see their application and document status.', group: 'channels', optIn: true, dependsOn: ['applications'], stage: 'live' },
-  { key: 'collegePortal', label: 'College portal', whatItDoes: 'Colleges log in to see applications and update their status.', group: 'channels', optIn: true, dependsOn: ['applications'], stage: 'live' },
-  { key: 'appointments', label: 'Appointments & counselling slots', whatItDoes: 'Students book a counselling call or visit with a counsellor; reminders go out and no-shows are tracked.', group: 'crm', optIn: true, dependsOn: ['leads'], priceMonthlyInr: 799, stage: 'live' },
-  { key: 'aiBot', label: 'AI admissions assistant', whatItDoes: 'An assistant that answers student questions from your own college data, qualifies enquiries, books appointments and hands over to a counsellor.', group: 'channels', optIn: true, dependsOn: ['leads'], priceMonthlyInr: 1499, stage: 'live' },
+  // 1. Lead Engine & Outreach
+  { key: 'leads', label: 'Lead Engine & Inflow', whatItDoes: 'Capture enquiries from webhooks, popups, and partners; round-robin assignment and pipeline tracking.', group: 'crm', core: true, stage: 'live' },
+  { key: 'followups', label: 'Tasks & Reminders', whatItDoes: 'Follow-up tasks, call notes and activity timelines so no enquiry is forgotten.', group: 'crm', dependsOn: ['leads'], stage: 'live' },
+
+  // 2. Admissions & Counselling
+  { key: 'students', label: 'Student Profiles & Batches', whatItDoes: 'Student profiles, academic marks, batch assignments, counselling sessions and attendance.', group: 'admissions', optIn: true, dependsOn: ['leads'], stage: 'live' },
+  { key: 'colleges', label: 'College Directory & Cutoff Predictor', whatItDoes: 'Directory of universities, courses, fees, plus B.Tech rank predictor lead magnet.', group: 'admissions', optIn: true, stage: 'live' },
+  { key: 'applications', label: 'Applications & Status Tracking', whatItDoes: 'End-to-end college admission application processing and stage history.', group: 'admissions', optIn: true, dependsOn: ['students', 'colleges'], stage: 'live' },
+  { key: 'documents', label: 'Document Vault & Verification', whatItDoes: 'Collect, verify and securely store 10th/12th marksheets, caste & entrance scorecards.', group: 'admissions', optIn: true, dependsOn: ['students'], stage: 'live' },
+  { key: 'appointments', label: 'Appointments & Counselling Slots', whatItDoes: '1-on-1 student counselling appointments, availability schedules, and waiting lists.', group: 'admissions', optIn: true, dependsOn: ['leads'], priceMonthlyInr: 799, stage: 'live' },
+
+  // 3. Growth & Channels
+  { key: 'whatsapp', label: 'WhatsApp Automation & Broadcasts', whatItDoes: 'Meta Cloud API WhatsApp automated follow-ups, broadcast campaigns, and template notifications.', group: 'channels', optIn: true, dependsOn: ['leads'], priceMonthlyInr: 999, stage: 'live' },
+  { key: 'metaAds', label: 'Meta & Instagram Lead Ads', whatItDoes: 'Sync Facebook and Instagram lead forms in real-time with instant auto-assignment.', group: 'channels', optIn: true, dependsOn: ['leads'], priceMonthlyInr: 1499, stage: 'live' },
+  { key: 'seoPages', label: 'Public Website & SEO Pages', whatItDoes: 'Search-friendly public college and course pages that bring organic prospective students.', group: 'channels', optIn: true, dependsOn: ['colleges'], priceMonthlyInr: 799, stage: 'live' },
+  { key: 'aiBot', label: 'AI Admissions Chat Assistant', whatItDoes: 'Smart assistant that answers student questions 24/7 and qualifies admissions on website & WhatsApp.', group: 'channels', optIn: true, dependsOn: ['leads'], priceMonthlyInr: 1499, stage: 'live' },
+
+  // 4. Finance & Settlements
+  { key: 'ledger', label: 'Student Fees & Ledgers', whatItDoes: 'Tamper-proof ledger for seat booking deposits, Razorpay fee payment links, and receipts.', group: 'finance', optIn: true, priceMonthlyInr: 999, stage: 'live' },
+  { key: 'commissions', label: 'College Commissions & Payouts', whatItDoes: 'Calculate college commission per admission, counsellor revenue share, and platform cut.', group: 'finance', optIn: true, dependsOn: ['ledger', 'applications'], priceMonthlyInr: 799, stage: 'live' },
+  { key: 'reports', label: 'Conversion & Funnel Analytics', whatItDoes: 'Counsellor closing rate, marketing channel CAC, and admission conversion ratios.', group: 'finance', optIn: true, dependsOn: ['leads'], priceMonthlyInr: 499, stage: 'live' },
+
+  // 5. Organisation & Portals
+  { key: 'team', label: 'Team & Counsellor Roles', whatItDoes: 'Manage counsellors, team members, role-based visibility, and branch permissions.', group: 'platform', core: true, stage: 'live' },
+  { key: 'publicApi', label: 'Universal Webhooks & API Keys', whatItDoes: 'Inbound webhooks for Justdial, Google Ads, Zapier, and third-party portal integrations.', group: 'platform', optIn: true, priceMonthlyInr: 999, stage: 'live' },
+  { key: 'studentPortal', label: 'Student Self-Service Portal', whatItDoes: 'Students log in to upload missing documents, pay pending fee links, and see assigned counsellor.', group: 'platform', optIn: true, dependsOn: ['applications'], stage: 'live' },
+  { key: 'collegePortal', label: 'College Partner Portal', whatItDoes: 'Colleges log in to review forwarded applications and update admission offers.', group: 'platform', optIn: true, dependsOn: ['applications'], stage: 'live' },
 ];
 
 export const MODULE_BY_KEY = new Map(MODULE_CATALOG.map((m) => [m.key, m]));

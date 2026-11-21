@@ -7,6 +7,7 @@ import { documentPublicRoutes } from './modules/documents/index.js';
 import { appointmentPublicRoutes } from './modules/appointments/index.js';
 import { botsPublicRoutes } from './modules/bots/index.js';
 import { poptinPublicRoutes } from './modules/leads/http/poptin.public.routes.js';
+import { universalLeadRoutes } from './modules/leads/http/universal.public.routes.js';
 import { collegePredictorPublicRoutes } from './modules/colleges/http/predictor.public.routes.js';
 
 /**
@@ -24,6 +25,7 @@ export const buildPublicRouter = (): Router => {
   r.use('/meta', metaJobsRoutes()); // POST /public/meta/jobs/sync-all (cron, JOBS_SECRET)
   r.use('/v1', publicApiPublicRoutes());
   r.use(documentPublicRoutes());
+  r.use(universalLeadRoutes()); // /public/leads/webhook/:slug (Justdial, Sulekha, Google Ads, Zapier)
   r.use(poptinPublicRoutes()); // /public/poptin/... embed SDK and lead capture
   r.use(collegePredictorPublicRoutes()); // /public/predict/:slug (lead magnet)
   r.use(botsPublicRoutes()); // /:slug/bot/... and /bot/whatsapp/inbound

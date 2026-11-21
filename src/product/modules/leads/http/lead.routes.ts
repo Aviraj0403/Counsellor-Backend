@@ -7,6 +7,7 @@ import { importLeads } from '../application/lead.import.js';
 import { assignLead, changeStage, createLead, getLead, listLeads } from '../application/lead.service.js';
 import { getPoptinConfig, savePoptinConfig } from '../application/poptin.service.js';
 import { getReferralConfig, listReferrals, updateReferralConfig, updateReferralStatus } from '../application/referral.service.js';
+import { ensureInitialPartners, listPartners, addPartner, updatePartnerStatus } from '../application/partner.service.js';
 
 const id = z.object({ id: z.string().regex(/^[a-f\d]{24}$/i, 'Invalid id') });
 
@@ -56,6 +57,78 @@ export const leadRoutes = (g: Guards): Router => {
         next(e);
       }
     },
+  );
+
+  // Partners Directory & Outreach
+  r.get(
+    '/partners',
+    g.requirePermission('leads:read'),
+    validate({
+      query: z.object({
+        city: z.string().optional(),
+        type: z.string().optional(),
+        status: z.string().optional(),
+        search: z.string().optional(),
+        page: z.coerce.number().optional(),
+        limit: z.coerce.number().optional(),
+      }),
+    }),
+    async (req, res, next) => {
+      try {
+        const tenantId = req.principal!.tenantId!;
+        await ensureInitialPartners(tenantId);
+        res.json(await listPartners(tenantId, req.valid.query));
+      } catch (e) {
+        next(e);
+      }
+    }
+  );
+
+  r.post(
+    '/partners',
+    g.requirePermission('leads:write'),
+    validate({
+      body: z.object({
+        name: z.string().min(2),
+        type: z.enum(['coaching_institute', 'junior_college', 'school', 'polytechnic']),
+        city: z.string().min(2),
+        state: z.string().optional(),
+        address: z.string().optional(),
+        phone: z.string().optional(),
+        email: z.string().email().optional().or(z.literal('')),
+        website: z.string().optional(),
+        contactPerson: z.string().optional(),
+        designation: z.string().optional(),
+        estStudentsCount: z.number().optional(),
+        notes: z.string().optional(),
+      }),
+    }),
+    async (req, res, next) => {
+      try {
+        res.status(201).json(await addPartner(req.principal!.tenantId!, req.valid.body));
+      } catch (e) {
+        next(e);
+      }
+    }
+  );
+
+  r.patch(
+    '/partners/:id/status',
+    g.requirePermission('leads:write'),
+    validate({
+      params: id,
+      body: z.object({
+        status: z.enum(['identified', 'contacted', 'meeting_scheduled', 'partnered', 'declined']),
+        notes: z.string().max(500).optional(),
+      }),
+    }),
+    async (req, res, next) => {
+      try {
+        res.json(await updatePartnerStatus(req.principal!.tenantId!, req.valid.params.id, req.valid.body.status, req.valid.body.notes));
+      } catch (e) {
+        next(e);
+      }
+    }
   );
 
   // Referral program management
