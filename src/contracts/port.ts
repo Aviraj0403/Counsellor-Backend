@@ -124,6 +124,9 @@ export interface TenantSummary {
   status: 'active' | 'suspended';
   slug?: string;
   logoUrl?: string | null;
+  settings?: {
+    counsellorAllStudentsVisible?: boolean;
+  };
 }
 
 /** Running costs the platform pays on an organisation's behalf (WhatsApp messages, SMS, storage...). */
@@ -148,4 +151,6 @@ export interface PlatformPort {
   disablePortalUsers(tenantId: string, linkedId: string): Promise<number>;
   /** Record a platform cost caused by an organisation, so margin reports see it. Never throws. */
   recordUsage(tenantId: string, entry: { category: UsageCategory; amountPaise: number; note?: string }): Promise<void>;
+  /** Organisation settings (e.g. counsellorAllStudentsVisible). */
+  getTenantSettings?(tenantId: string): Promise<{ counsellorAllStudentsVisible?: boolean }>;
 }

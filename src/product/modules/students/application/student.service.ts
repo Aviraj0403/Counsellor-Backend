@@ -11,8 +11,24 @@ import { StudentModel } from '../infrastructure/student.model.js';
 
 const OBJECT_ID = /^[a-f\d]{24}$/i;
 
-/** A counsellor only sees students assigned to them. */
-const visibility = (p: Principal) => (p.role === 'counsellor' ? { assignedTo: p.userId } : {});
+/**
+ * Counsellor visibility rule:
+ * By default (or when counsellorAllStudentsVisible is true in tenant settings),
+ * counsellors can see all students under their organisation.
+ * When counsellorAllStudentsVisible is false, counsellors only see students assigned to them.
+ */
+const visibility = async (p: Principal): Promise<Record<string, unknown>> => {
+  if (p.role !== 'counsellor' || !p.tenantId) return {};
+  try {
+    const settings = await getPlatform().getTenantSettings?.(p.tenantId);
+    if (settings && settings.counsellorAllStudentsVisible === false) {
+      return { assignedTo: p.userId };
+    }
+  } catch {
+    /* fallback to open */
+  }
+  return {};
+};
 
 export interface StudentInput {
   name: string;
@@ -108,7 +124,8 @@ export const createStudentFromLead = async (p: Principal, leadId: string, body: 
 };
 
 export const listStudents = async (p: Principal, q: { page: number; limit: number; search?: string; includeErased?: boolean }) => {
-  const filter: Record<string, unknown> = { ...visibility(p) };
+  const vis = await visibility(p);
+  const filter: Record<string, unknown> = { ...vis };
   if (!q.includeErased) filter.status = { $ne: 'erased' };
   if (q.search) {
     const safe = escapeRegex(q.search);
@@ -124,7 +141,8 @@ export const listStudents = async (p: Principal, q: { page: number; limit: numbe
 };
 
 export const getStudentForPrincipal = async (p: Principal, id: string) => {
-  const s = await StudentModel(p.tenantId!).findOne({ _id: id, ...visibility(p) }).lean<any>();
+  const vis = await visibility(p);
+  const s = await StudentModel(p.tenantId!).findOne({ _id: id, ...vis }).lean<any>();
   if (!s) throw notFound('Student');
   return s;
 };
@@ -132,7 +150,8 @@ export const getStudentForPrincipal = async (p: Principal, id: string) => {
 export const updateStudent = async (p: Principal, id: string, patch: Partial<StudentInput>) => {
   const tenantId = p.tenantId!;
   const Student = StudentModel(tenantId);
-  const cur = await Student.findOne({ _id: id, ...visibility(p) });
+  const vis = await visibility(p);
+  const cur = await Student.findOne({ _id: id, ...vis });
   if (!cur) throw notFound('Student');
   if (cur.status === 'erased') throw conflict('This student has been erased and cannot be changed.');
   const set: Record<string, unknown> = {};

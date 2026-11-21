@@ -35,6 +35,13 @@ const schema = z.object({
   META_GRAPH_VERSION: z.string().default('v21.0'),
   META_APP_SECRET: z.string().optional(),
 
+  // ---- Background Jobs & Redis
+  REDIS_URL: z.string().optional(),
+
+  // ---- WhatsApp Provider (Meta Cloud API or generic webhook fallback)
+  WHATSAPP_PROVIDER: z.enum(['meta', 'webhook']).default('meta'),
+  WHATSAPP_GATEWAY_URL: z.string().url().optional(),
+
   // ---- WhatsApp Cloud API (one platform number shared by organisations, preferred) and what each message costs us
   WHATSAPP_PHONE_NUMBER_ID: z.string().optional(),
   WHATSAPP_TOKEN: z.string().optional(),

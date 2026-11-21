@@ -1,7 +1,7 @@
 import { env } from '../../../../config/env.js';
 import { getPlatform } from '../../../../contracts/registry.js';
 import type { Principal } from '../../../../contracts/port.js';
-import { httpRequest } from '../../../../shared/infra/http.js';
+import { getJobQueue } from '../../../../shared/infra/queue.js';
 import { logger } from '../../../../shared/infra/logger.js';
 import { AppError, badRequest, forbidden, notFound } from '../../../../shared/kernel/errors.js';
 import { audit } from '../../audit/index.js';
@@ -17,6 +17,7 @@ import {
   toWhatsappNumber,
 } from '../domain/whatsapp.domain.js';
 import { MessageModel, TemplateModel } from '../infrastructure/whatsapp.model.js';
+import { getWhatsAppProvider } from '../infrastructure/provider.js';
 
 const isCounsellor = (p: Principal) => p.role === 'counsellor';
 
@@ -44,7 +45,7 @@ export const resolveRecipient = async (tenantId: string, ref: { leadId?: string;
   throw badRequest('Choose a lead or a student to message.');
 };
 
-export const isConfigured = (): boolean => !!(env.WHATSAPP_TOKEN && env.WHATSAPP_PHONE_NUMBER_ID);
+export const isConfigured = (): boolean => getWhatsAppProvider().isConfigured();
 
 export interface SendInput {
   leadId?: string;
@@ -96,11 +97,15 @@ export const sendMessage = async (p: Principal, input: SendInput, now = new Date
     at: now,
   });
   await audit(tenantId, { action: later ? 'whatsapp.queued' : 'whatsapp.send_requested', entity: 'whatsapp_message', entityId: String(doc._id), meta: { template: tpl.name, [recipient.kind + 'Id']: recipient.id } });
-  if (later) return { message: doc.toObject(), duplicate: false };
+  if (later) {
+    const delayMs = Math.max(0, input.sendAt!.getTime() - now.getTime());
+    await getJobQueue().enqueue({ type: 'whatsapp:send', tenantId, messageId: String(doc._id) }, { delayMs });
+    return { message: doc.toObject(), duplicate: false };
+  }
   return { message: await deliver(tenantId, String(doc._id)), duplicate: false };
 };
 
-/** Calls the Cloud API for one logged message, records the outcome and meters the cost for a successful send only. */
+/** Calls the configured provider for one logged message, records the outcome and meters the cost for a successful send only. */
 export const deliver = async (tenantId: string, messageId: string) => {
   const Message = MessageModel(tenantId);
   const m = await Message.findById(messageId);
@@ -108,25 +113,17 @@ export const deliver = async (tenantId: string, messageId: string) => {
   if (m.status !== 'queued') return m.toObject();
   let providerId: string | undefined;
   let error: string | undefined;
-  if (!isConfigured()) {
+  const provider = getWhatsAppProvider();
+
+  if (!provider.isConfigured()) {
     error = 'WhatsApp is not set up on the platform yet.';
   } else {
     try {
-      const res = await httpRequest(`https://graph.facebook.com/${env.META_GRAPH_VERSION}/${env.WHATSAPP_PHONE_NUMBER_ID}/messages`, {
-        method: 'POST',
-        headers: { authorization: `Bearer ${env.WHATSAPP_TOKEN}` },
-        body: {
-          messaging_product: 'whatsapp',
-          to: toWhatsappNumber(m.to),
-          type: 'template',
-          template: { name: m.template, language: { code: m.language ?? 'en' }, components: templateComponents(m.params ?? []) },
-        },
-      });
-      if (res.ok && res.data?.messages?.[0]?.id) providerId = String(res.data.messages[0].id);
-      else error = String(res.data?.error?.message ?? `WhatsApp answered with status ${res.status}.`).slice(0, 300);
-    } catch (err) {
-      logger.warn({ err }, 'whatsapp send failed');
-      error = 'Could not reach WhatsApp. Please try again.';
+      const res = await provider.sendTemplate(m.to, m.template, m.language ?? 'en', m.params ?? []);
+      providerId = res.providerId;
+    } catch (err: any) {
+      logger.warn({ err: err?.message, messageId }, 'whatsapp provider send failed');
+      error = err?.message || 'Could not reach WhatsApp provider. Please try again.';
     }
   }
   if (providerId) {

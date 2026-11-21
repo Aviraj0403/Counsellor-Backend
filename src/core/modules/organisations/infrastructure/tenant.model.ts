@@ -1,5 +1,10 @@
 import mongoose, { Schema, model, type Model } from 'mongoose';
 
+export interface TenantSettings {
+  /** If true, counsellors in the organisation can view all students, not just those assigned to them */
+  counsellorAllStudentsVisible?: boolean;
+}
+
 /** An organisation (counsellor business). Master DB. Student/lead data does NOT live here, it lives in the organisation's own database. */
 export interface TenantDoc {
   _id: any;
@@ -15,6 +20,7 @@ export interface TenantDoc {
   /** https URL of the organisation's logo and an optional brand colour (#rrggbb), shown in the admin */
   logoUrl?: string | null;
   brandColor?: string | null;
+  settings?: TenantSettings;
   createdAt: Date;
 }
 
@@ -28,6 +34,9 @@ const tenantSchema = new Schema<TenantDoc>(
     priceOverrides: { type: Schema.Types.Mixed, default: {} },
     logoUrl: { type: String, maxlength: 500, default: null },
     brandColor: { type: String, match: /^#[0-9a-fA-F]{6}$/, default: null },
+    settings: {
+      counsellorAllStudentsVisible: { type: Boolean, default: true },
+    },
   },
   { timestamps: true, minimize: false },
 );

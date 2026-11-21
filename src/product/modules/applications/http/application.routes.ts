@@ -5,6 +5,7 @@ import { objectId, paging } from '../../../../shared/http/schemas.js';
 import { validate } from '../../../../shared/http/validate.js';
 import { STATUSES } from '../domain/application.domain.js';
 import { changeApplicationStatus, createApplication, getApplicationForPrincipal, listApplications, updateApplication } from '../application/application.service.js';
+import { createStudentFeeLink, listStudentFeeLinks, markStudentFeePaid } from '../application/studentFee.service.js';
 
 const id = z.object({ id: objectId });
 const paise = z.number().int().min(0).max(1_000_000_000_00);
@@ -90,6 +91,60 @@ export const applicationRoutes = (g: Guards): Router => {
       try {
         const b = req.valid.body;
         res.json(await changeApplicationStatus(req.principal!, req.valid.params.id, b.to, b.note, b.feePaidPaise));
+      } catch (e) {
+        next(e);
+      }
+    },
+  );
+
+  // ---- Student Fee Links & Online Payments
+  r.get(
+    '/fee-links/list',
+    g.requirePermission('applications:read'),
+    validate({ query: z.object({ studentId: objectId.optional(), applicationId: objectId.optional() }) }),
+    async (req, res, next) => {
+      try {
+        res.json({ items: await listStudentFeeLinks(req.principal!.tenantId!, req.valid.query) });
+      } catch (e) {
+        next(e);
+      }
+    },
+  );
+
+  r.post(
+    '/fee-links',
+    g.requirePermission('applications:write'),
+    validate({
+      body: z.object({
+        studentId: objectId,
+        applicationId: objectId.optional(),
+        title: z.string().min(2).max(150),
+        amountRupees: z.number().min(1),
+        notes: z.string().max(300).optional(),
+      }),
+    }),
+    async (req, res, next) => {
+      try {
+        res.status(201).json(await createStudentFeeLink(req.principal!, req.valid.body));
+      } catch (e) {
+        next(e);
+      }
+    },
+  );
+
+  r.post(
+    '/fee-links/:linkId/mark-paid',
+    g.requirePermission('applications:write'),
+    validate({
+      params: z.object({ linkId: objectId }),
+      body: z.object({
+        paymentId: z.string().optional(),
+        notes: z.string().max(200).optional(),
+      }),
+    }),
+    async (req, res, next) => {
+      try {
+        res.json(await markStudentFeePaid(req.principal!.tenantId!, req.valid.params.linkId, req.valid.body, req.principal!.userId));
       } catch (e) {
         next(e);
       }

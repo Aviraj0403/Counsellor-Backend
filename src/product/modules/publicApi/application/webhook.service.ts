@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import type { Principal } from '../../../../contracts/port.js';
 import { getPlatform } from '../../../../contracts/registry.js';
+import { getJobQueue } from '../../../../shared/infra/queue.js';
 import { decryptString, encryptString, randomToken } from '../../../../shared/infra/crypto.js';
 import { httpRequest } from '../../../../shared/infra/http.js';
 import { logger } from '../../../../shared/infra/logger.js';
@@ -84,7 +85,7 @@ export const listDeliveries = async (tenantId: string, q: { webhookId?: string; 
 
 // ---- sending
 /** One signed POST. Records the outcome and schedules the next attempt (or gives up after MAX_ATTEMPTS). Never throws. */
-const attempt = async (tenantId: string, delivery: any): Promise<void> => {
+export const attemptDelivery = async (tenantId: string, delivery: any): Promise<void> => {
   const D = WebhookDeliveryModel(tenantId);
   const hook = await WebhookModel(tenantId).findById(delivery.webhookId).lean<any>();
   const attempts = (delivery.attempts ?? 0) + 1;
@@ -128,7 +129,12 @@ const attempt = async (tenantId: string, delivery: any): Promise<void> => {
   else set.nextAttemptAt = new Date(Date.now() + delay);
   await D.updateOne({ _id: delivery._id }, { $set: set, ...(Object.keys(unset).length ? { $unset: unset } : {}) });
   if (hook) await WebhookModel(tenantId).updateOne({ _id: hook._id }, ok ? { $set: { failureCount: 0 } } : { $inc: { failureCount: 1 } });
-  if (!ok) logger.warn({ tenantId, event: delivery.event, attempts, responseCode }, 'webhook delivery failed');
+  if (!ok) {
+    logger.warn({ tenantId, event: delivery.event, attempts, responseCode }, 'webhook delivery failed');
+    if (delay !== null) {
+      await getJobQueue().enqueue({ type: 'webhook:retry', tenantId, deliveryId: String(delivery._id) }, { delayMs: delay });
+    }
+  }
 };
 
 const enqueue = async (tenantId: string, event: WebhookEvent, data: Record<string, unknown>, occurredAt = new Date()) => {
@@ -139,7 +145,7 @@ const enqueue = async (tenantId: string, event: WebhookEvent, data: Record<strin
     const id = randomUUID();
     const body = JSON.stringify({ id, event, occurredAt: occurredAt.toISOString(), data });
     const d = await WebhookDeliveryModel(tenantId).create({ webhookId: String(h._id), event, eventId: id, body, status: 'retrying', attempts: 0, nextAttemptAt: new Date(Date.now() + LEASE_MS) });
-    await attempt(tenantId, d.toObject());
+    await attemptDelivery(tenantId, d.toObject());
   }
 };
 
@@ -156,7 +162,7 @@ export const retryDueDeliveries = async (tenantId?: string, now = new Date()): P
       const claimed = await D.findOneAndUpdate({ _id: d._id, status: 'retrying', nextAttemptAt: { $lte: now } }, { $set: { nextAttemptAt: new Date(now.getTime() + LEASE_MS) } }, { new: true }).lean<any>();
       if (!claimed) continue;
       tried++;
-      await attempt(t, claimed);
+      await attemptDelivery(t, claimed);
       if ((await D.findById(d._id).lean<any>())?.status === 'delivered') delivered++;
     }
   }
@@ -172,7 +178,7 @@ export const retryDelivery = async (p: Principal, id: string) => {
   if (cur.status === 'delivered') throw badRequest('This delivery already succeeded.');
   const claimed = await D.findOneAndUpdate({ _id: id, status: { $in: ['retrying', 'failed'] } }, { $set: { status: 'retrying', attempts: cur.status === 'failed' ? 0 : cur.attempts, nextAttemptAt: new Date(Date.now() + LEASE_MS) } }, { new: true }).lean<any>();
   if (!claimed) throw badRequest('This delivery cannot be retried now.');
-  await attempt(tenantId, claimed);
+  await attemptDelivery(tenantId, claimed);
   await audit(tenantId, { action: 'webhook.delivery_retried', entity: 'webhookDelivery', entityId: id });
   return deliveryView((await D.findById(id).lean<any>())!);
 };

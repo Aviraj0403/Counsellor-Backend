@@ -6,6 +6,7 @@ export {
   enabledModules,
   getTenantAccess,
   getTenantRecord,
+  getTenantSettings,
   listTenantRecords,
   listTenantSummaries,
   patchPriceOverrides,

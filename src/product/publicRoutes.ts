@@ -6,6 +6,8 @@ import { publicApiPublicRoutes } from './modules/publicApi/index.js';
 import { documentPublicRoutes } from './modules/documents/index.js';
 import { appointmentPublicRoutes } from './modules/appointments/index.js';
 import { botsPublicRoutes } from './modules/bots/index.js';
+import { poptinPublicRoutes } from './modules/leads/http/poptin.public.routes.js';
+import { collegePredictorPublicRoutes } from './modules/colleges/http/predictor.public.routes.js';
 
 /**
  * Composition of the PUBLIC surface (no login): API-key endpoints for websites and colleges, webhooks from Meta / WhatsApp /
@@ -22,6 +24,8 @@ export const buildPublicRouter = (): Router => {
   r.use('/meta', metaJobsRoutes()); // POST /public/meta/jobs/sync-all (cron, JOBS_SECRET)
   r.use('/v1', publicApiPublicRoutes());
   r.use(documentPublicRoutes());
+  r.use(poptinPublicRoutes()); // /public/poptin/... embed SDK and lead capture
+  r.use(collegePredictorPublicRoutes()); // /public/predict/:slug (lead magnet)
   r.use(botsPublicRoutes()); // /:slug/bot/... and /bot/whatsapp/inbound
   r.use(appointmentPublicRoutes()); // keep last: matches /:slug/appointments/... and the reminders job
   return r;

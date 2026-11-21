@@ -10,6 +10,7 @@ import {
   type RequiredDocument,
   type ShortlistCriteria,
 } from '../domain/college.domain.js';
+import { predictColleges, type PredictorInput } from '../domain/predictor.domain.js';
 import { CollegeModel, CourseModel } from '../infrastructure/college.model.js';
 
 const OBJECT_ID = /^[a-f\d]{24}$/i;
@@ -237,6 +238,20 @@ export const shortlist = async (p: Principal, criteria: ShortlistCriteria) => {
   });
   const matches = matchCourses(items, criteria, new Date());
   return { total: matches.length, items: matches };
+};
+
+export const predictBTechAdmission = async (tenantId: string, input: PredictorInput) => {
+  const colleges = await CollegeModel(tenantId).find({ active: true }).lean<any[]>();
+  const byId = new Map(colleges.map((c) => [String(c._id), c]));
+  const courses = await CourseModel(tenantId).find({ active: true, level: 'ug', collegeId: { $in: [...byId.keys()] } }).lean<any[]>();
+  const items = courses.map((c) => {
+    const col = byId.get(c.collegeId)!;
+    return {
+      course: { id: String(c._id), name: c.name, level: c.level, stream: c.stream, annualFeePaise: c.annualFeePaise, totalFeePaise: c.totalFeePaise, intakes: c.intakes ?? [], eligibility: c.eligibility },
+      college: { id: String(col._id), name: col.name, city: col.city, state: col.state, type: col.type },
+    };
+  });
+  return predictColleges(items, input);
 };
 
 /** ---- public API for other modules (inside one organisation) ---- */

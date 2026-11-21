@@ -5,6 +5,7 @@ import { publish } from '../../../../shared/kernel/events.js';
 import { audit } from '../../audit/index.js';
 import { LeadModel } from '../infrastructure/lead.model.js';
 import { canTransition, isOpenStage, nextStages, normalizePhone, pickAssignee, type LeadStage } from '../domain/lead.domain.js';
+import { recordReferralLead } from './referral.service.js';
 
 export interface CreateLeadInput {
   name: string;
@@ -12,7 +13,7 @@ export interface CreateLeadInput {
   email?: string;
   city?: string;
   interestedCourse?: string;
-  source: { channel: string; utmSource?: string; utmMedium?: string; utmCampaign?: string };
+  source: { channel: string; utmSource?: string; utmMedium?: string; utmCampaign?: string; referralCode?: string };
   consent: { given: boolean; source?: string };
   autoAssign?: boolean;
 }
@@ -42,7 +43,11 @@ export const createLead = async (p: Principal, input: CreateLeadInput) => {
   }
 
   let assignedTo: string | undefined;
-  if (input.autoAssign) {
+  // Automatically assign if explicitly requested OR if created by public/system sources (e.g. meta-ads, website, seo, bot, api)
+  const isSystemOrPublic = p.role === 'system' || p.userId?.startsWith('system:') || p.userId?.startsWith('api:');
+  const shouldAutoAssign = input.autoAssign ?? isSystemOrPublic;
+
+  if (shouldAutoAssign) {
     const team = await getPlatform().listTeam(tenantId, ['counsellor']);
     const load = await openLoadByUser(tenantId);
     assignedTo = pickAssignee(team.map((m) => ({ id: m.id, openLeads: load.get(m.id) ?? 0 })));
@@ -63,6 +68,20 @@ export const createLead = async (p: Principal, input: CreateLeadInput) => {
   });
   await audit(tenantId, { action: 'lead.created', entity: 'lead', entityId: String(lead._id), meta: { channel: input.source.channel, assignedTo } });
   await publish('lead.created', { tenantId, leadId: String(lead._id), channel: input.source.channel, actorId: p.userId });
+
+  // Record referral attribution if lead came through referral
+  if (input.source.channel === 'referral' || input.source.referralCode) {
+    const code = input.source.referralCode || input.source.utmCampaign;
+    if (code) {
+      await recordReferralLead(tenantId, {
+        id: String(lead._id),
+        name: lead.name,
+        phone: lead.phone,
+        referralCode: code,
+      }).catch(() => {});
+    }
+  }
+
   return { lead: lead.toObject(), duplicate: false };
 };
 

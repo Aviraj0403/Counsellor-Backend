@@ -50,19 +50,32 @@ const view = (d: any) => ({
   createdAt: d.createdAt,
 });
 
-/** A counsellor only reaches documents of students assigned to them (or of applications assigned to them). */
+/** A counsellor only reaches documents of students assigned to them, unless counsellorAllStudentsVisible is enabled. */
 const assertStudentAccess = async (p: Principal, studentId: string, applicationId?: string) => {
   const tenantId = p.tenantId!;
   if (!OBJECT_ID.test(studentId)) throw notFound('Student');
   const student: any = await getStudent(tenantId, studentId);
   if (!student || student.status === 'erased') throw notFound('Student');
+
+  let restricted = false;
+  if (p.role === 'counsellor') {
+    try {
+      const settings = await getPlatform().getTenantSettings?.(tenantId);
+      if (settings && settings.counsellorAllStudentsVisible === false) {
+        restricted = true;
+      }
+    } catch {
+      /* open by default */
+    }
+  }
+
   if (applicationId) {
     const app = OBJECT_ID.test(applicationId) ? await getApplication(tenantId, applicationId) : null;
     if (!app || app.studentId !== studentId) throw notFound('Application');
-    if (p.role === 'counsellor' && student.assignedTo !== p.userId && app.assignedTo !== p.userId) throw notFound('Student');
+    if (restricted && student.assignedTo !== p.userId && app.assignedTo !== p.userId) throw notFound('Student');
     return { student, app };
   }
-  if (p.role === 'counsellor' && student.assignedTo !== p.userId) throw notFound('Student');
+  if (restricted && student.assignedTo !== p.userId) throw notFound('Student');
   return { student, app: null };
 };
 

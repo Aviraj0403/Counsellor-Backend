@@ -5,11 +5,124 @@ import { validate } from '../../../../shared/http/validate.js';
 import { LEAD_STAGES } from '../domain/lead.domain.js';
 import { importLeads } from '../application/lead.import.js';
 import { assignLead, changeStage, createLead, getLead, listLeads } from '../application/lead.service.js';
+import { getPoptinConfig, savePoptinConfig } from '../application/poptin.service.js';
+import { getReferralConfig, listReferrals, updateReferralConfig, updateReferralStatus } from '../application/referral.service.js';
 
 const id = z.object({ id: z.string().regex(/^[a-f\d]{24}$/i, 'Invalid id') });
 
 export const leadRoutes = (g: Guards): Router => {
   const r = Router();
+
+  r.get('/poptin/config', g.requirePermission('leads:read'), async (req, res, next) => {
+    try {
+      res.json(await getPoptinConfig(req.principal!.tenantId!));
+    } catch (e) {
+      next(e);
+    }
+  });
+
+  r.put(
+    '/poptin/config',
+    g.requirePermission('leads:write'),
+    validate({
+      body: z.object({
+        enabled: z.boolean().optional(),
+        headline: z.string().max(140).optional(),
+        subheadline: z.string().max(300).optional(),
+        allowedDomains: z.array(z.string().trim()).optional(),
+        triggers: z
+          .object({
+            exitIntent: z.boolean().optional(),
+            timeDelaySeconds: z.number().min(0).max(300).optional(),
+            scrollPercentage: z.number().min(0).max(100).optional(),
+          })
+          .optional(),
+        design: z
+          .object({
+            themeColor: z.string().optional(),
+            buttonText: z.string().optional(),
+            buttonColor: z.string().optional(),
+            buttonTextColor: z.string().optional(),
+            backgroundColor: z.string().optional(),
+            textColor: z.string().optional(),
+          })
+          .optional(),
+      }),
+    }),
+    async (req, res, next) => {
+      try {
+        res.json(await savePoptinConfig(req.principal!.tenantId!, req.valid.body, req.principal!.userId));
+      } catch (e) {
+        next(e);
+      }
+    },
+  );
+
+  // Referral program management
+  r.get('/referrals/config', g.requirePermission('leads:read'), async (req, res, next) => {
+    try {
+      res.json(await getReferralConfig(req.principal!.tenantId!));
+    } catch (e) {
+      next(e);
+    }
+  });
+
+  r.put(
+    '/referrals/config',
+    g.requirePermission('leads:write'),
+    validate({
+      body: z.object({
+        enabled: z.boolean().optional(),
+        rewardAmountRupees: z.number().min(0).optional(),
+        rewardDescription: z.string().max(250).optional(),
+        termsAndConditions: z.string().max(500).optional(),
+      }),
+    }),
+    async (req, res, next) => {
+      try {
+        res.json(await updateReferralConfig(req.principal!.tenantId!, req.valid.body, req.principal!.userId));
+      } catch (e) {
+        next(e);
+      }
+    },
+  );
+
+  r.get(
+    '/referrals',
+    g.requirePermission('leads:read'),
+    validate({
+      query: z.object({
+        status: z.enum(['pending', 'enrolled', 'rewarded', 'rejected']).optional(),
+        studentId: z.string().optional(),
+      }),
+    }),
+    async (req, res, next) => {
+      try {
+        res.json({ items: await listReferrals(req.principal!.tenantId!, req.valid.query) });
+      } catch (e) {
+        next(e);
+      }
+    },
+  );
+
+  r.patch(
+    '/referrals/:id/status',
+    g.requirePermission('leads:write'),
+    validate({
+      params: id,
+      body: z.object({
+        status: z.enum(['pending', 'enrolled', 'rewarded', 'rejected']),
+        notes: z.string().max(200).optional(),
+      }),
+    }),
+    async (req, res, next) => {
+      try {
+        res.json(await updateReferralStatus(req.principal!.tenantId!, req.valid.params.id, req.valid.body.status, req.valid.body.notes));
+      } catch (e) {
+        next(e);
+      }
+    },
+  );
 
   r.post(
     '/',

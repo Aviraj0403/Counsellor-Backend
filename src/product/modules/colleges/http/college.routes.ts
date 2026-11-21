@@ -14,6 +14,7 @@ import {
   listColleges,
   listCourses,
   shortlist,
+  predictBTechAdmission,
   updateCollege,
   updateCourse,
 } from '../application/college.service.js';
@@ -87,6 +88,24 @@ export const collegeRoutes = (g: Guards): Router => {
 
   // ---- fixed paths first (before /:id)
   r.post('/import', g.requirePermission('colleges:write'), validate({ body: z.object({ rows: z.array(importRow).min(1).max(500) }) }), wrap((req) => importColleges(req.principal, req.valid.body.rows)));
+
+  r.post(
+    '/predict',
+    g.requirePermission('colleges:read'),
+    validate({
+      body: z.object({
+        exam: z.enum(['jee_main', 'mht_cet', 'wbjee', 'kcet', 'direct_12th']),
+        rank: z.number().int().min(1).max(2_000_000).optional(),
+        percentile: z.number().min(0).max(100).optional(),
+        percentage: z.number().min(0).max(100).optional(),
+        category: z.enum(['general', 'obc', 'sc', 'st', 'ews', 'management']),
+        preferredBranches: z.array(str(80)).optional(),
+        preferredCities: z.array(str(80)).optional(),
+        budgetMaxPaise: z.number().int().min(0).optional(),
+      }),
+    }),
+    wrap((req) => predictBTechAdmission(req.principal.tenantId, req.valid.body)),
+  );
 
   r.post(
     '/shortlist',

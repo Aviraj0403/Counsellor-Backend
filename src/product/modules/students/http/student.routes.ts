@@ -13,6 +13,16 @@ import {
   listStudents,
   updateStudent,
 } from '../application/student.service.js';
+import {
+  addStudentsToBatch,
+  createBatch,
+  createSession,
+  getBatch,
+  listBatches,
+  listSessions,
+  markAttendance,
+  removeStudentFromBatch,
+} from '../application/batch.service.js';
 
 const id = z.object({ id: objectId });
 const str = (n: number) => z.string().trim().max(n);
@@ -122,6 +132,131 @@ export const studentRoutes = (g: Guards): Router => {
       try {
         if (req.valid.body.confirm !== 'ERASE') throw badRequest('Type ERASE to confirm. This cannot be undone.');
         res.json(await eraseStudent(req.principal!, req.valid.params.id, req.valid.body.reason));
+      } catch (e) {
+        next(e);
+      }
+    },
+  );
+
+  // ---- Batches, Sessions & Attendance
+  r.get('/batches/list', g.requirePermission('students:read'), async (req, res, next) => {
+    try {
+      res.json({ items: await listBatches(req.principal!.tenantId!, req.query as any) });
+    } catch (e) {
+      next(e);
+    }
+  });
+
+  r.get('/batches/:id', g.requirePermission('students:read'), validate({ params: id }), async (req, res, next) => {
+    try {
+      res.json(await getBatch(req.principal!.tenantId!, req.valid.params.id));
+    } catch (e) {
+      next(e);
+    }
+  });
+
+  r.post(
+    '/batches',
+    g.requirePermission('students:write'),
+    validate({
+      body: z.object({
+        name: z.string().min(2).max(120),
+        academicYear: z.string().min(4).max(20),
+        courseStream: z.string().max(100).optional(),
+        counsellorId: objectId.optional(),
+        capacity: z.number().int().min(1).default(50),
+        notes: z.string().max(300).optional(),
+      }),
+    }),
+    async (req, res, next) => {
+      try {
+        res.status(201).json(await createBatch(req.principal!, req.valid.body));
+      } catch (e) {
+        next(e);
+      }
+    },
+  );
+
+  r.post(
+    '/batches/:id/students',
+    g.requirePermission('students:write'),
+    validate({ params: id, body: z.object({ studentIds: z.array(objectId).min(1) }) }),
+    async (req, res, next) => {
+      try {
+        res.json(await addStudentsToBatch(req.principal!.tenantId!, req.valid.params.id, req.valid.body.studentIds, req.principal!.userId));
+      } catch (e) {
+        next(e);
+      }
+    },
+  );
+
+  r.delete(
+    '/batches/:id/students/:studentId',
+    g.requirePermission('students:write'),
+    validate({ params: z.object({ id: objectId, studentId: objectId }) }),
+    async (req, res, next) => {
+      try {
+        res.json(await removeStudentFromBatch(req.principal!.tenantId!, req.valid.params.id, req.valid.params.studentId, req.principal!.userId));
+      } catch (e) {
+        next(e);
+      }
+    },
+  );
+
+  r.get(
+    '/batches/:id/sessions',
+    g.requirePermission('students:read'),
+    validate({ params: id }),
+    async (req, res, next) => {
+      try {
+        res.json({ items: await listSessions(req.principal!.tenantId!, req.valid.params.id) });
+      } catch (e) {
+        next(e);
+      }
+    },
+  );
+
+  r.post(
+    '/batches/:id/sessions',
+    g.requirePermission('students:write'),
+    validate({
+      params: id,
+      body: z.object({
+        title: z.string().min(2).max(150),
+        description: z.string().max(500).optional(),
+        sessionDate: z.string().datetime().transform((v) => new Date(v)),
+        startTime: z.string().min(2).max(20),
+        endTime: z.string().min(2).max(20),
+        venue: z.string().max(100).optional(),
+      }),
+    }),
+    async (req, res, next) => {
+      try {
+        res.status(201).json(await createSession(req.principal!, { ...req.valid.body, batchId: req.valid.params.id }));
+      } catch (e) {
+        next(e);
+      }
+    },
+  );
+
+  r.post(
+    '/sessions/:sessionId/attendance',
+    g.requirePermission('students:write'),
+    validate({
+      params: z.object({ sessionId: objectId }),
+      body: z.object({
+        records: z.array(
+          z.object({
+            studentId: objectId,
+            status: z.enum(['present', 'absent', 'late', 'excused']),
+            notes: z.string().max(150).optional(),
+          }),
+        ),
+      }),
+    }),
+    async (req, res, next) => {
+      try {
+        res.json(await markAttendance(req.principal!.tenantId!, req.valid.params.sessionId, req.valid.body.records, req.principal!.userId));
       } catch (e) {
         next(e);
       }

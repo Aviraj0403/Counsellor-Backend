@@ -64,17 +64,25 @@ export const organisationsRoutes = (g: Guards): Router => {
     }
   });
 
-  // The organisation's owner sets their own logo and colour. (Staff acting as the organisation cannot: they lack team:manage.)
+  // The organisation's owner sets their own logo, colour and settings. (Staff acting as the organisation cannot: they lack team:manage.)
   r.patch(
     '/organisation/profile',
     g.authenticate,
     g.requireTenant,
     g.requirePermission('team:manage'),
-    validate({ body: z.object({ logoUrl: logoUrl.optional(), brandColor: brandColor.optional() }).refine((b) => Object.keys(b).length > 0, { message: 'Send logoUrl or brandColor.' }) }),
+    validate({
+      body: z
+        .object({
+          logoUrl: logoUrl.optional(),
+          brandColor: brandColor.optional(),
+          settings: z.object({ counsellorAllStudentsVisible: z.boolean().optional() }).optional(),
+        })
+        .refine((b) => Object.keys(b).length > 0, { message: 'Send logoUrl, brandColor or settings.' }),
+    }),
     async (req, res, next) => {
       try {
         const t = await updateTenantProfile(req.principal!.tenantId!, req.valid.body);
-        res.json({ logoUrl: t.logoUrl, brandColor: t.brandColor });
+        res.json({ logoUrl: t.logoUrl, brandColor: t.brandColor, settings: t.settings });
       } catch (e) {
         next(e);
       }

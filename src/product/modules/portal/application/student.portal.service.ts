@@ -6,6 +6,9 @@ import { getCollege, getCourse } from '../../colleges/index.js';
 import { checklistFor, listDocumentsForStudent, storeDocument } from '../../documents/index.js';
 import { getStudent } from '../../students/index.js';
 import { studentHistory, studentProfileView } from '../domain/portal.domain.js';
+import { getOrCreateStudentReferralCode } from '../../leads/application/referral.service.js';
+import { getPlatform } from '../../../../contracts/registry.js';
+import { listStudentFeeLinks } from '../../applications/application/studentFee.service.js';
 
 const OBJECT_ID = /^[a-f\d]{24}$/i;
 
@@ -55,7 +58,31 @@ export const overview = async (p: Principal) => {
     applications.push({ ...(await appView(tenantId, detail!)), checklist: await checklistFor(tenantId, studentId, s.id) });
   }
   const documents = (await listDocumentsForStudent(tenantId, studentId)).map(docView);
-  return { profile: studentProfileView(student), applications, documents };
+
+  // Student referral code & reward info
+  const referralInfo = await getOrCreateStudentReferralCode(tenantId, studentId).catch(() => null);
+
+  // Assigned counsellor contact details
+  let counsellor: { id: string; name: string; email?: string } | null = null;
+  if (student.assignedTo) {
+    const team = await getPlatform().listTeam(tenantId, ['counsellor']).catch(() => []);
+    const member = team.find((m) => m.id === student.assignedTo);
+    if (member) {
+      counsellor = { id: member.id, name: member.name };
+    }
+  }
+
+  // Pending fee links
+  const feeLinks = await listStudentFeeLinks(tenantId, { studentId }).catch(() => []);
+
+  return {
+    profile: studentProfileView(student),
+    applications,
+    documents,
+    referral: referralInfo,
+    counsellor,
+    feeLinks,
+  };
 };
 
 export const applicationDetail = async (p: Principal, id: string) => {

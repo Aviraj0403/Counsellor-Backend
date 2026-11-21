@@ -15,6 +15,9 @@ export const shapeTenant = (t: TenantRecord) => ({
   status: t.status,
   logoUrl: t.logoUrl ?? null,
   brandColor: t.brandColor ?? null,
+  settings: {
+    counsellorAllStudentsVisible: t.settings?.counsellorAllStudentsVisible ?? true,
+  },
   modules: resolveModules(MODULE_CATALOG, t.modules ?? {}),
   createdAt: t.createdAt,
 });
@@ -68,19 +71,30 @@ export const listTenants = async (q: { page: number; limit: number }) => {
 
 export const renameTenant = async (tenantId: string, name: string) => updateTenantProfile(tenantId, { name });
 
-/** Name and/or branding. null clears the logo / colour. Used by platform staff (any organisation) and by an organisation's owner (their own, no name). */
-export const updateTenantProfile = async (tenantId: string, patch: { name?: string; logoUrl?: string | null; brandColor?: string | null }) => {
+/** Name, branding or settings. null clears the logo / colour. Used by platform staff (any organisation) and by an organisation's owner (their own, no name). */
+export const updateTenantProfile = async (
+  tenantId: string,
+  patch: {
+    name?: string;
+    logoUrl?: string | null;
+    brandColor?: string | null;
+    settings?: { counsellorAllStudentsVisible?: boolean };
+  },
+) => {
   if (!isValidObjectId(tenantId)) throw notFound('Organisation');
   if (patch.logoUrl && !isValidLogoUrl(patch.logoUrl)) throw badRequest('The logo must be an https:// link of at most 500 characters.');
   if (patch.brandColor && !isValidBrandColor(patch.brandColor)) throw badRequest('The brand colour must look like #1a2b3c.');
   const set: Record<string, unknown> = {};
   for (const k of ['name', 'logoUrl', 'brandColor'] as const) if (patch[k] !== undefined) set[k] = patch[k];
+  if (patch.settings?.counsellorAllStudentsVisible !== undefined) {
+    set['settings.counsellorAllStudentsVisible'] = patch.settings.counsellorAllStudentsVisible;
+  }
   if (!Object.keys(set).length) throw badRequest('Nothing to change.');
   const t = await Tenant.findByIdAndUpdate(tenantId, { $set: set }, { new: true }).lean();
   if (!t) throw notFound('Organisation');
   if (patch.name !== undefined) await recordPlatformAudit({ action: 'tenant.renamed', targetType: 'tenant', targetId: tenantId, tenantId, meta: { name: patch.name } });
-  if (patch.logoUrl !== undefined || patch.brandColor !== undefined) {
-    await recordPlatformAudit({ action: 'tenant.branding_changed', targetType: 'tenant', targetId: tenantId, tenantId, meta: { logoUrl: patch.logoUrl, brandColor: patch.brandColor } });
+  if (patch.logoUrl !== undefined || patch.brandColor !== undefined || patch.settings !== undefined) {
+    await recordPlatformAudit({ action: 'tenant.branding_changed', targetType: 'tenant', targetId: tenantId, tenantId, meta: { logoUrl: patch.logoUrl, brandColor: patch.brandColor, settings: patch.settings } });
   }
   return shapeTenant(t);
 };
@@ -100,6 +114,11 @@ export const setTenantStatus = async (tenantId: string, status: 'active' | 'susp
   if (!t) throw notFound('Organisation');
   await recordPlatformAudit({ action: status === 'suspended' ? 'tenant.suspended' : 'tenant.reactivated', targetType: 'tenant', targetId: tenantId, tenantId });
   return { id: String(t._id), status: t.status };
+};
+
+export const getTenantSettings = async (tenantId: string): Promise<{ counsellorAllStudentsVisible?: boolean }> => {
+  const t = await Tenant.findById(tenantId).select('settings').lean();
+  return { counsellorAllStudentsVisible: t?.settings?.counsellorAllStudentsVisible ?? true };
 };
 
 export const listTenantSummaries = async (): Promise<TenantSummary[]> => {

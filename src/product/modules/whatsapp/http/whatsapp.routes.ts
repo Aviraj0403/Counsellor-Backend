@@ -6,6 +6,7 @@ import { objectId, paging } from '../../../../shared/http/schemas.js';
 import { RULE_EVENTS } from '../domain/whatsapp.domain.js';
 import { createRule, deleteRule, listRules, updateRule } from '../application/whatsapp.rules.js';
 import { createTemplate, deleteTemplate, dispatchDue, listMessages, listTemplates, sendMessage, updateTemplate } from '../application/whatsapp.service.js';
+import { createCampaign, executeCampaign, getCampaign, listCampaigns } from '../application/whatsapp.campaign.service.js';
 
 const id = z.object({ id: objectId });
 const lang = z.string().min(2).max(10);
@@ -24,6 +25,19 @@ const ruleBody = {
   params: z.array(z.string().max(200)).max(10).default([]),
   delayMinutes: z.number().int().min(0).max(60 * 24 * 30).default(0),
   active: z.boolean().optional(),
+};
+const campaignBody = {
+  name: z.string().min(1).max(120),
+  template: z.string().min(1).max(80),
+  language: lang.default('en'),
+  audience: z.enum(['leads', 'students', 'all']).default('leads'),
+  filters: z.object({
+    stage: z.string().max(60).optional(),
+    city: z.string().max(60).optional(),
+    course: z.string().max(100).optional(),
+  }).optional(),
+  paramMapping: z.array(z.string().max(50)).default(['name']),
+  scheduledAt: z.string().datetime().optional().transform((v) => (v ? new Date(v) : undefined)),
 };
 
 export const whatsappRoutes = (g: Guards): Router => {
@@ -69,6 +83,12 @@ export const whatsappRoutes = (g: Guards): Router => {
   r.post('/rules', g.requirePermission('integrations:manage'), validate({ body: z.object(ruleBody) }), wrap(async (req, res) => void res.status(201).json(await createRule(req.principal!, req.valid.body))));
   r.patch('/rules/:id', g.requirePermission('integrations:manage'), validate({ params: id, body: z.object(ruleBody).partial() }), wrap(async (req, res) => void res.json(await updateRule(req.principal!, req.valid.params.id, req.valid.body))));
   r.delete('/rules/:id', g.requirePermission('integrations:manage'), validate({ params: id }), wrap(async (req, res) => void res.json(await deleteRule(req.principal!, req.valid.params.id))));
+
+  // campaigns: broadcast WhatsApp campaigns
+  r.get('/campaigns', g.requirePermission('integrations:manage'), wrap(async (req, res) => void res.json({ items: await listCampaigns(req.principal!.tenantId!) })));
+  r.get('/campaigns/:id', g.requirePermission('integrations:manage'), validate({ params: id }), wrap(async (req, res) => void res.json(await getCampaign(req.principal!.tenantId!, req.valid.params.id))));
+  r.post('/campaigns', g.requirePermission('integrations:manage'), validate({ body: z.object(campaignBody) }), wrap(async (req, res) => void res.status(201).json(await createCampaign(req.principal!, req.valid.body))));
+  r.post('/campaigns/:id/execute', g.requirePermission('integrations:manage'), validate({ params: id }), wrap(async (req, res) => void res.json(await executeCampaign(req.principal!.tenantId!, req.valid.params.id, req.principal!.userId))));
 
   return r;
 };
