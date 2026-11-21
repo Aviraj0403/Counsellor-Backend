@@ -127,7 +127,7 @@ export const processJob = async (data: BackgroundJobData): Promise<void> => {
   } else if (type === 'webhook:retry') {
     const { WebhookDeliveryModel } = await import('../../product/modules/publicApi/infrastructure/publicApi.model.js');
     const { attemptDelivery } = await import('../../product/modules/publicApi/application/webhook.service.js');
-    const delivery = await WebhookDeliveryModel(tenantId).findById(data.deliveryId).lean();
+    const delivery = await WebhookDeliveryModel(tenantId).findById(data.deliveryId).lean<any>();
     if (delivery && delivery.status === 'retrying') {
       await attemptDelivery(tenantId, delivery);
     }
